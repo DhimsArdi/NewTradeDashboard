@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Inter:Semi Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'TT Interphases Pro:Bold';
+  src: url('/fonts/TT_Interphases_Pro-Bold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'TT Interphases Pro:DemiBold';
+  src: url('/fonts/TT_Interphases_Pro-DemiBold.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'TT Interphases Pro:Medium';
+  src: url('/fonts/TT_Interphases_Pro-Medium.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'TT Interphases Pro:Regular';
+  src: url('/fonts/TT_Interphases_Pro-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+:root {
+  font-family: 'TT Interphases Pro:Regular', Arial, sans-serif;
+  color: #171717;
+  background: #fcfcfc;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[class*='font-[\'TT_Interphases_Pro:Bold\']'] {
+  font-weight: 700;
+}
+
+[class*='font-[\'TT_Interphases_Pro:DemiBold\']'] {
+  font-weight: 600;
+}
+
+[class*='font-[\'TT_Interphases_Pro:Medium\']'] {
+  font-weight: 500;
+}
+
+[class*='font-[\'TT_Interphases_Pro:Regular\']'] {
+  font-weight: 400;
+}
+
+[data-name='Expand Menu'],
+[data-name='Today button'],
+[data-name^='Shortcut ·'],
+[data-name^='Report ·'] {
+  cursor: pointer;
+}
+
+[data-name='Expand Menu']:hover,
+[data-name='Today button']:hover,
+[data-name^='Shortcut ·']:hover,
+[data-name^='Report ·']:hover {
+  filter: brightness(0.97);
+}
+
+@media (max-width: 720px) {
+  [data-name='App Navigation 3.0'] {
+    display: none;
+  }
+
+  [data-node-id='2:19887'] {
+    left: 0;
+  }
+
+  .dashboard-viewport {
+    overflow-x: auto;
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "description": "Provides step-by-step guidance for users to push code to GitHub, simplifying version control for developers and beginners alike.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
