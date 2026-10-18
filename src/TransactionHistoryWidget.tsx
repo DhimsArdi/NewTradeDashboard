@@ -361,6 +361,10 @@ function CurrencyPicker({
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search currency"
                   aria-label="Search currency"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="search"
                   className="flex-1 min-w-0 bg-transparent outline-none font-['TT_Interphases_Pro:Regular'] leading-[24px] text-[16px] text-[#171717] placeholder:text-[#737373]"
                 />
                 {query && (
@@ -371,7 +375,7 @@ function CurrencyPicker({
               </label>
             </div>
           )}
-          <ul role="listbox" aria-label="Currency" className="py-[4px] max-h-[264px] overflow-y-auto">
+          <ul role="listbox" aria-label="Currency" className="py-[4px] max-h-[264px] overflow-y-auto overscroll-contain">
             {matches.length ? (
               matches.map((c) => (
                 <MenuItem

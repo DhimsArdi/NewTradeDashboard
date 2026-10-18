@@ -124,7 +124,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
       <div className="flex flex-1 min-h-0">
         {/* Channel rail */}
         <div className="flex h-full w-[88px] shrink-0 flex-col pt-[16px]">
-          <div className="flex flex-1 min-h-0 flex-col items-center gap-[8px] overflow-y-auto pb-[16px] pt-[3px]">
+          <div className="flex flex-1 min-h-0 flex-col items-center gap-[8px] overflow-y-auto overscroll-contain pb-[16px] pt-[3px]">
             {channels.map((channel) => {
               const active = channel.label === activeChannel;
               return (
@@ -171,7 +171,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
         <div
           aria-hidden={collapsed}
           inert={collapsed}
-          className={`relative flex h-full w-[248px] shrink-0 flex-col overflow-y-auto pb-[24px] pl-[17px] pr-[16px] pt-[16px] transition-opacity duration-150 ${collapsed ? "opacity-0" : "opacity-100"}`}
+          className={`relative flex h-full w-[248px] shrink-0 flex-col overflow-y-auto overscroll-contain pb-[24px] pl-[17px] pr-[16px] pt-[16px] transition-opacity duration-150 ${collapsed ? "opacity-0" : "opacity-100"}`}
         >
           <span className="absolute left-0 top-0 bottom-0 w-px bg-[#e4e7ec]" />
           <label className="mb-[12px] flex shrink-0 items-center gap-[8px] bg-white border border-[#d4d4d4] rounded-[8px] px-[14px] py-[10px] drop-shadow-[0px_1px_1px_rgba(16,24,40,0.05)] focus-within:border-[#099697] focus-within:shadow-[0_0_0_2px_#b5e0e0]">
@@ -183,6 +183,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
               onKeyDown={(e) => e.key === "Escape" && setQuery("")}
               placeholder="Search menu"
               aria-label="Search menu"
+              enterKeyHint="search"
               className="min-w-0 flex-1 bg-transparent outline-none font-['TT_Interphases_Pro:Regular'] leading-[24px] text-[16px] text-[#171717] placeholder:text-[#737373]"
             />
           </label>

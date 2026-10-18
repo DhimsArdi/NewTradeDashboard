@@ -62,7 +62,7 @@ export default function TradeDashboardMaster() {
         data-node-id="2:19887"
       >
         <div className="content-stretch flex flex-col items-start min-w-[400px] pointer-events-auto pr-[8px] py-[8px] rounded-[16px] w-full" data-name="container_wrapper">
-          <div className="bg-[#f5f5f5] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start min-h-[calc(100vh-16px)] overflow-clip py-[32px] relative rounded-[16px] shrink-0 w-full" data-node-id="2:19888" data-name="Main">
+          <div className="bg-[#f5f5f5] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start min-h-[calc(100svh-16px)] overflow-clip py-[32px] relative rounded-[16px] shrink-0 w-full" data-node-id="2:19888" data-name="Main">
             <div className="@container flex flex-col gap-[32px] max-w-[1280px] relative self-center shrink-0 w-full" data-node-id="42:64534" data-name="Vertical Scroll">
               <div className="content-stretch flex flex-col items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19889" data-name="Header Section 1">
                 <div className="content-stretch flex flex-col gap-[20px] isolate items-start relative shrink-0 w-full" data-node-id="2:19890" data-name="Section header">

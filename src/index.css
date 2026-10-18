@@ -1,5 +1,14 @@
 @import 'tailwindcss';
 
+/* Tailwind's hover only checks (hover: hover); also require a precise pointer so taps never leave a stuck hover. */
+@custom-variant hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
 @font-face {
   font-family: 'Inter:Semi Bold';
   src: url('https://static.figma.com/font/Inter_1') format('woff2');
@@ -33,6 +42,27 @@
   src: url('/fonts/TT_Interphases_Pro-Regular.woff2') format('woff2');
   font-style: normal;
   font-weight: 400;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent; /* every control has its own :active feedback */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Controls fire click without the double-tap wait, and a long-press doesn't select their label. Content text stays selectable. */
+button,
+a,
+[role='button'],
+[role='option'],
+[role='checkbox'],
+[role='radio'],
+[data-name='Expand Menu'],
+[data-name^='Shortcut ·'],
+[data-name^='Report · '] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 :root {
@@ -77,14 +107,22 @@ body {
   cursor: pointer;
 }
 
-[data-name='Expand Menu']:hover,
-[data-name^='Shortcut ·']:hover {
-  filter: brightness(0.97);
+@media (hover: hover) and (pointer: fine) {
+  [data-name='Expand Menu']:hover,
+  [data-name^='Shortcut ·']:hover {
+    filter: brightness(0.97);
+  }
+}
+
+[data-name='Expand Menu']:active,
+[data-name^='Shortcut ·']:active {
+  filter: brightness(0.94);
 }
 
 /* Report Overview · download modal, dropdown and toast */
 .report-modal-scroll,
 .report-menu-scroll {
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #e5e5e5 transparent;
 }
@@ -229,6 +267,7 @@ body {
 /* The calendar list draws its own always-visible thumb. */
 .cal-scroll {
   scrollbar-width: none;
+  overscroll-behavior: contain; /* reaching the end of the list doesn't scroll the page */
 }
 
 .cal-scroll::-webkit-scrollbar {
