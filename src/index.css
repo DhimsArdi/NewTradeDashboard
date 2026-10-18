@@ -235,9 +235,23 @@ body {
   display: none;
 }
 
+/* Limit Facility · usage bars grow from the left on load */
+@keyframes lf-bar-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.6);
+  }
+}
+
+.lf-bar-in {
+  transform-origin: left;
+  animation: lf-bar-in 320ms var(--ease-out-strong) backwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cal-month-next,
-  .cal-month-prev {
+  .cal-month-prev,
+  .lf-bar-in {
     animation-name: th-fade-in;
   }
 
