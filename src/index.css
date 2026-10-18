@@ -237,6 +237,21 @@ body {
   animation: th-bar-in 280ms var(--ease-out-strong) backwards;
 }
 
+/* App navigation · the panel keeps its 336px width; collapsing clips it to the 88px rail (composited, no layout) */
+.nav-clip {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 200ms var(--ease-out-strong);
+}
+
+.nav-clip-collapsed {
+  clip-path: inset(0 248px 0 0);
+}
+
+/* The content slides in from its old offset; don't let that flash a horizontal scrollbar. */
+.dashboard-viewport {
+  overflow-x: clip;
+}
+
 /* Calendar · month change slides in from the direction of travel; list fades on filter change */
 @keyframes cal-month-from-next {
   from {
@@ -292,6 +307,10 @@ body {
   .cal-month-prev,
   .lf-bar-in {
     animation-name: th-fade-in;
+  }
+
+  .nav-clip {
+    transition: none;
   }
 
   .th-press:active {

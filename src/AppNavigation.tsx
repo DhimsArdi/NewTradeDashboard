@@ -106,9 +106,9 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
       aria-label="App navigation"
       data-name="App Navigation 3.0"
       data-node-id="2:19886"
-      className={`fixed z-20 left-0 top-0 h-dvh bg-[#fcfcfc] flex flex-col overflow-hidden transition-[width] duration-200 ease-out ${collapsed ? "w-[88px]" : "w-[336px]"}`}
+      className={`nav-clip fixed z-20 left-0 top-0 h-dvh w-[336px] bg-[#fcfcfc] flex flex-col overflow-hidden ${collapsed ? "nav-clip-collapsed" : ""}`}
     >
-      <div className={`flex h-[76px] shrink-0 items-center ${collapsed ? "justify-center px-[26px]" : "justify-between pl-[18px] pr-[20px]"}`}>
+      <div className={`flex h-[76px] shrink-0 items-center ${collapsed ? "w-[88px] justify-center px-[26px]" : "justify-between pl-[18px] pr-[20px]"}`}>
         {!collapsed && <img alt="BNI direct" className="h-[24px] w-[108.102px] object-cover" src={a("f2ae2.png")} />}
         <button
           type="button"

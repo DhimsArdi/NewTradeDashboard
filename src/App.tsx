@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import AppNavigation from "./AppNavigation";
 import TransactionHistoryWidget from "./TransactionHistoryWidget";
 import ReportOverviewWidget from "./ReportOverviewWidget";
@@ -34,11 +34,30 @@ const imgArrowRight = `${assetPathPrefix}/9d328.svg`;
 const imgClock1 = `${assetPathPrefix}/ea938.svg`;
 const imgChevronRight1 = `${assetPathPrefix}/bc2d8.svg`;
 
+const NAV_EXPANDED = 336;
+const NAV_COLLAPSED = 88;
+
 export default function TradeDashboardMaster() {
   const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(false);
   const [notice, setNotice] = useState("");
   // Dev-only fixture switch; remounting the widgets reloads them with the chosen dataset.
   const dataset = useDataset();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const contentLeft = isNavigationCollapsed ? NAV_COLLAPSED : NAV_EXPANDED;
+  const previousLeft = useRef(contentLeft);
+
+  // Animating `left` re-lays out the whole dashboard every frame. Instead the content moves to its new
+  // offset once and a WAAPI transform slides it from the old one, which the compositor can run off the main thread.
+  useLayoutEffect(() => {
+    const el = contentRef.current;
+    const delta = previousLeft.current - contentLeft;
+    previousLeft.current = contentLeft;
+    if (!el || delta === 0 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    el.animate([{ transform: `translateX(${delta}px)` }, { transform: "translateX(0)" }], {
+      duration: 200,
+      easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+    });
+  }, [contentLeft]);
 
   const handleDashboardClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = (event.target as HTMLElement).closest<HTMLElement>("[data-name]");
@@ -58,7 +77,9 @@ export default function TradeDashboardMaster() {
     >
       <AppNavigation collapsed={isNavigationCollapsed} onToggle={() => setIsNavigationCollapsed((c) => !c)} onNotify={setNotice} />
       <div
-        className={`absolute min-h-full pointer-events-none right-0 top-0 transition-[left] duration-200 ${isNavigationCollapsed ? "left-[88px]" : "left-[336px]"}`}
+        ref={contentRef}
+        className="absolute min-h-full pointer-events-none right-0 top-0 left-[var(--content-left)]"
+        style={{ "--content-left": `${contentLeft}px` } as React.CSSProperties}
         data-node-id="2:19887"
       >
         <div className="content-stretch flex flex-col items-start min-w-[400px] pointer-events-auto pr-[8px] py-[8px] rounded-[16px] w-full" data-name="container_wrapper">

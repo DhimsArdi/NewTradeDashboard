@@ -16,7 +16,6 @@ const imgRefresh = a("transaction-history/refresh.svg");
 // ---------- Demo data ----------
 
 const TODAY = new Date(2026, 7, 18);
-const VISIBLE_ITEMS = 3;
 
 type Expiry = {
   date: Date;
@@ -158,30 +157,41 @@ function ExpiryItem({ item }: { item: Expiry }) {
 // Native overlay scrollbars hide until scrolled, so the "more below" thumb is drawn here and kept visible.
 function ExpiryList({ label, items }: { label: string; items: Expiry[] }) {
   const ref = useRef<HTMLUListElement>(null);
-  const [thumb, setThumb] = useState<{ top: number; height: number } | null>(null);
-  const scrollable = items.length > VISIBLE_ITEMS;
+  const thumbRef = useRef<HTMLDivElement>(null);
 
+  // Runs on every scroll event, so it writes straight to the DOM instead of re-rendering the list.
   const measure = () => {
     const el = ref.current;
-    if (!el || el.scrollHeight <= el.clientHeight) return setThumb(null);
+    const thumb = thumbRef.current;
+    if (!el || !thumb) return;
+    const overflow = el.scrollHeight > el.clientHeight + 1;
+    if (el.dataset.overflow !== String(overflow)) el.dataset.overflow = String(overflow);
+    thumb.style.display = overflow ? "block" : "none";
+    if (!overflow) return;
     // Long lists would shrink the thumb to a sliver; keep it grabbable-looking.
     const height = Math.max(24, (el.clientHeight / el.scrollHeight) * el.clientHeight);
     const top = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * (el.clientHeight - height);
-    setThumb({ top, height });
+    thumb.style.height = `${height}px`;
+    thumb.style.transform = `translateY(${top}px)`;
   };
 
-  useEffect(measure, [items]);
+  useEffect(() => {
+    measure();
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [items]);
 
   return (
     <div className="cal-fade-in relative h-full">
-      <ul ref={ref} aria-label={label} onScroll={measure} className={`cal-scroll h-full overflow-x-clip overflow-y-auto ${scrollable ? "pr-[12px]" : ""}`}>
+      <ul ref={ref} aria-label={label} onScroll={measure} className="cal-scroll h-full overflow-x-clip overflow-y-auto data-[overflow=true]:pr-[12px]">
         {items.map((item) => (
           <ExpiryItem key={`${item.title}-${item.date.toISOString()}`} item={item} />
         ))}
       </ul>
-      {thumb && (
-        <div aria-hidden className="pointer-events-none absolute right-0 w-[4px] rounded-[2px] bg-[#d4d4d4]" style={{ top: thumb.top, height: thumb.height }} />
-      )}
+      <div ref={thumbRef} aria-hidden className="pointer-events-none absolute right-0 top-0 hidden w-[4px] rounded-[2px] bg-[#d4d4d4]" />
     </div>
   );
 }
