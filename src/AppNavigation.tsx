@@ -42,6 +42,13 @@ type Props = {
   onNotify: (message: string) => void;
 };
 
+// Figma tints every icon instance (gray at rest, brand teal when active) on top of the
+// exported glyph, so the shape is used as a mask and painted with that tint.
+function Icon({ src, size, color }: { src: string; size: number; color: string }) {
+  const mask = `url("${src}") center / contain no-repeat`;
+  return <span aria-hidden className="block shrink-0" style={{ width: size, height: size, backgroundColor: color, mask, WebkitMask: mask }} />;
+}
+
 function NavItem({ item, active, onSelect }: { item: MenuItem; active: boolean; onSelect: () => void }) {
   return (
     <button
@@ -51,7 +58,7 @@ function NavItem({ item, active, onSelect }: { item: MenuItem; active: boolean; 
       className={`flex w-full items-center gap-[12px] max-h-[40px] px-[8px] py-[10px] my-px rounded-[6px] text-left transition-colors outline-none focus-visible:shadow-[0_0_0_2px_white,0_0_0_4px_#077879] ${active ? "bg-[#e5f4eb]" : "hover:bg-[#f5f5f5]"}`}
     >
       <span className="flex flex-1 min-w-0 items-center gap-[8px]">
-        <img alt="" className="block size-[20px] shrink-0" src={item.icon} />
+        <Icon src={item.icon} size={20} color={active ? "#099697" : "#a3a3a3"} />
         <span className={`font-['TT_Interphases_Pro:Medium'] leading-[20px] text-[14px] truncate ${active ? "text-[#077879]" : "text-[#404040]"}`}>
           {item.label}
         </span>
@@ -129,7 +136,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
                   aria-disabled={channel.comingSoon || undefined}
                   className={`flex w-[80px] shrink-0 flex-col items-center justify-center gap-[4px] px-[8px] py-[6px] rounded-[16px] transition-colors outline-none focus-visible:shadow-[0_0_0_2px_#077879] ${active ? "bg-[#edf8f1]" : "hover:bg-[#f5f5f5]"} ${channel.comingSoon ? "cursor-not-allowed" : ""}`}
                 >
-                  <img alt="" className="block size-[24px]" src={channel.icon} />
+                  <Icon src={channel.icon} size={24} color={active ? "#099697" : "#a3a3a3"} />
                   <span className={`text-[10px] leading-[16px] text-center ${active ? "font-['TT_Interphases_Pro:DemiBold'] text-[#099697]" : "font-['TT_Interphases_Pro:Medium'] text-[#404040]"}`}>
                     {channel.label}
                   </span>
@@ -181,7 +188,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
           </label>
 
           {filteredGeneral.length > 0 && (
-            <div className="flex flex-col pb-[16px]">
+            <div className="flex flex-col gap-[8px] pb-[16px]">
               {filteredGeneral.map((item) => (
                 <NavItem key={item.label} item={item} active={activeItem === item.label} onSelect={() => select(item.label)} />
               ))}

@@ -73,17 +73,188 @@ body {
 }
 
 [data-name='Expand Menu'],
-[data-name='Today button'],
-[data-name^='Shortcut ·'],
-[data-name^='Report ·'] {
+[data-name^='Shortcut ·'] {
   cursor: pointer;
 }
 
 [data-name='Expand Menu']:hover,
-[data-name='Today button']:hover,
-[data-name^='Shortcut ·']:hover,
-[data-name^='Report ·']:hover {
+[data-name^='Shortcut ·']:hover {
   filter: brightness(0.97);
+}
+
+/* Report Overview · download modal, dropdown and toast */
+.report-modal-scroll,
+.report-menu-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #e5e5e5 transparent;
+}
+
+.report-modal-scroll::-webkit-scrollbar,
+.report-menu-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.report-modal-scroll::-webkit-scrollbar-thumb,
+.report-menu-scroll::-webkit-scrollbar-thumb {
+  background: #e5e5e5;
+  border-radius: 3px;
+}
+
+@keyframes report-overlay-in {
+  from { opacity: 0; }
+}
+
+@keyframes report-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+@keyframes report-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+}
+
+.report-overlay-in {
+  animation: report-overlay-in 180ms ease-out;
+}
+
+.report-modal-in {
+  animation: report-modal-in 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.report-toast-in {
+  animation: report-toast-in 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-overlay-in,
+  .report-modal-in,
+  .report-toast-in {
+    animation: none;
+  }
+}
+
+/* Transaction History · motion */
+:root {
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.th-press {
+  transition:
+    transform 160ms var(--ease-out-strong),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.th-press:active {
+  transform: scale(0.97);
+}
+
+/* Dropdowns scale in from their trigger; transform-origin is set per menu. */
+.th-pop {
+  transition:
+    opacity 150ms var(--ease-out-strong),
+    transform 150ms var(--ease-out-strong);
+}
+
+/* First tooltip eases in; moving between bars reuses the node, so it repositions instantly. */
+.th-tooltip {
+  transition:
+    opacity 125ms var(--ease-out-strong),
+    transform 125ms var(--ease-out-strong);
+}
+
+@starting-style {
+  .th-pop {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+
+  .th-tooltip {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.th-dim {
+  transition: opacity 150ms ease;
+}
+
+/* Bars rise from the baseline once data arrives; delay is staggered inline. */
+@keyframes th-bar-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.6);
+  }
+}
+
+@keyframes th-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.th-bar-in {
+  transform-origin: bottom;
+  animation: th-bar-in 280ms var(--ease-out-strong) backwards;
+}
+
+/* Calendar · month change slides in from the direction of travel; list fades on filter change */
+@keyframes cal-month-from-next {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@keyframes cal-month-from-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+.cal-month-next {
+  animation: cal-month-from-next 200ms var(--ease-out-strong);
+}
+
+.cal-month-prev {
+  animation: cal-month-from-prev 200ms var(--ease-out-strong);
+}
+
+.cal-fade-in {
+  animation: th-fade-in 150ms ease-out;
+}
+
+/* The calendar list draws its own always-visible thumb. */
+.cal-scroll {
+  scrollbar-width: none;
+}
+
+.cal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-month-next,
+  .cal-month-prev {
+    animation-name: th-fade-in;
+  }
+
+  .th-press:active {
+    transform: none;
+  }
+
+  @starting-style {
+    .th-pop,
+    .th-tooltip {
+      transform: none;
+    }
+  }
+
+  .th-bar-in {
+    animation-name: th-fade-in;
+  }
 }
 
 @media (max-width: 720px) {
