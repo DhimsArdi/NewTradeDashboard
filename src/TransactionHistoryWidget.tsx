@@ -236,7 +236,7 @@ function EventsFilter({
   const lastOne = selected.length === 1;
 
   return (
-    <div ref={ref} className="relative shrink-0">
+    <div ref={ref} className="relative shrink-0 ml-auto">
       <button
         type="button"
         aria-haspopup="true"
@@ -494,8 +494,8 @@ export default function TransactionHistoryWidget({ className = "" }: { className
       className={`bg-white border border-[#e5e5e5] border-solid flex flex-col gap-[20px] items-start p-[24px] relative rounded-[16px] ${className}`}
       data-name="Widget / Transaction History"
     >
-      <header className="flex gap-[16px] items-start w-full">
-        <div className="flex flex-1 min-w-0 flex-col gap-[2px] justify-center self-stretch">
+      <header className="flex flex-wrap gap-[12px_16px] items-start w-full">
+        <div className="flex flex-[1_1_200px] min-w-0 flex-col gap-[2px] justify-center self-stretch">
           <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Transaction History</h2>
           <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] truncate">{subtitle}</p>
         </div>
@@ -518,11 +518,11 @@ export default function TransactionHistoryWidget({ className = "" }: { className
       </header>
 
       <div className="flex flex-col gap-[16px] w-full">
-        <div className="flex gap-[8px] items-start w-full">
+        <div className="flex flex-wrap gap-[8px] items-start w-full">
           {!singleChannel && (
             <Select
               label="Product"
-              className="flex-[1_0_0] min-w-px"
+              className="flex-[1_1_0] min-w-[140px]"
               menuWidth={200}
               value={channel.label}
               options={owned.map((c) => c.label)}
@@ -532,7 +532,7 @@ export default function TransactionHistoryWidget({ className = "" }: { className
           )}
           <Select
             label="Show by"
-            className={singleChannel ? "flex-[1_0_0] min-w-px" : "w-[150px] shrink-0"}
+            className={singleChannel ? "flex-[1_1_0] min-w-[140px]" : "flex-[0_1_150px] min-w-[130px]"}
             menuWidth={160}
             value={showBy}
             options={showByOptions}

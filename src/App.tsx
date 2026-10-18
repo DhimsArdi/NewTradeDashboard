@@ -59,7 +59,7 @@ export default function TradeDashboardMaster() {
         data-node-id="2:19887"
       >
         <div className="content-stretch flex flex-col items-start min-w-[400px] pointer-events-auto pr-[8px] py-[8px] rounded-[16px] w-full" data-name="container_wrapper">
-          <div className="bg-[#f5f5f5] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start min-h-[1719px] overflow-clip py-[32px] relative rounded-[16px] shrink-0 w-full" data-node-id="2:19888" data-name="Main">
+          <div className="bg-[#f5f5f5] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start min-h-[calc(100vh-16px)] overflow-clip py-[32px] relative rounded-[16px] shrink-0 w-full" data-node-id="2:19888" data-name="Main">
             <div className="@container flex flex-col gap-[32px] max-w-[1280px] relative self-center shrink-0 w-full" data-node-id="42:64534" data-name="Vertical Scroll">
               <div className="content-stretch flex flex-col items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19889" data-name="Header Section 1">
                 <div className="content-stretch flex flex-col gap-[20px] isolate items-start relative shrink-0 w-full" data-node-id="2:19890" data-name="Section header">
@@ -77,9 +77,7 @@ export default function TradeDashboardMaster() {
               </div>
               <div className="@min-[880px]:flex-row content-stretch flex flex-col gap-[24px] items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19891" data-name="Container <>">
                 <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-start min-w-px relative w-full" data-node-id="2:19892" data-name="Left-Column">
-                  <div className="content-stretch flex flex-col h-[728px] items-start justify-between relative shrink-0 w-full" data-node-id="24:48272" data-name="Widget / Limit Facility">
-                    <LimitFacilityWidget className="shrink-0 w-full" />
-                  </div>
+                  <LimitFacilityWidget className="shrink-0 w-full" />
                   <TransactionHistoryWidget className="shrink-0 w-full" />
                   <ReportOverviewWidget className="shrink-0 w-full" />
                 </div>
@@ -99,7 +97,7 @@ export default function TradeDashboardMaster() {
                       <p className="[word-break:break-word] font-['TT_Interphases_Pro:Bold'] leading-[1.2] not-italic relative shrink-0 text-[#171717] text-[24px] whitespace-nowrap" data-node-id="I2:20091;2:19314">
                         4
                       </p>
-                      <p className="[word-break:break-word] font-['TT_Interphases_Pro:Regular'] h-[40px] leading-[20px] min-w-full not-italic relative shrink-0 text-[#525252] text-[14px] w-[min-content]" data-node-id="I2:20091;2:19315">
+                      <p className="[word-break:break-word] font-['TT_Interphases_Pro:Regular'] min-h-[40px] leading-[20px] min-w-full not-italic relative shrink-0 text-[#525252] text-[14px] w-[min-content]" data-node-id="I2:20091;2:19315">
                         Partially rejected or returned by the bank.
                       </p>
                       <div className="content-stretch drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[6px] items-center justify-center relative rounded-[9999px] shrink-0" data-node-id="I2:20091;2:19316" data-name="Buttons">
@@ -125,7 +123,7 @@ export default function TradeDashboardMaster() {
                       <p className="[word-break:break-word] font-['TT_Interphases_Pro:Bold'] leading-[1.2] not-italic relative shrink-0 text-[#171717] text-[24px] whitespace-nowrap" data-node-id="I2:20092;2:19321">
                         6
                       </p>
-                      <p className="[word-break:break-word] font-['TT_Interphases_Pro:Regular'] h-[40px] leading-[20px] min-w-full not-italic relative shrink-0 text-[#525252] text-[14px] w-[min-content]" data-node-id="I2:20092;2:19322">
+                      <p className="[word-break:break-word] font-['TT_Interphases_Pro:Regular'] min-h-[40px] leading-[20px] min-w-full not-italic relative shrink-0 text-[#525252] text-[14px] w-[min-content]" data-node-id="I2:20092;2:19322">
                         Waiting for approval or processed by the bank.
                       </p>
                       <div className="content-stretch drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[6px] items-center justify-center relative rounded-[9999px] shrink-0" data-node-id="I2:20092;2:19323" data-name="Buttons">
