@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { currentDataset } from "./devData";
 
 const a = (file: string) => `/assets/${file}`;
 const imgDotExpiry = a("056f2.svg");
@@ -37,6 +38,32 @@ const expiries: Expiry[] = [
   { date: new Date(2026, 8, 15), title: "Limit facility expiry", counterparty: "Bill Purchasing Line", amount: "IDR 5,000,000,000.00" },
   { date: new Date(2026, 8, 22), title: "BG expiry - IGTRG00312A25", counterparty: "PT Waskita Karya", amount: "IDR 980,000,000.00", amendExtend: true },
 ];
+
+// Stress-test fixtures for the dev data toggle: long names, huge amounts, a crowded day, a 60-item month.
+const worstExpiries: Expiry[] = [
+  { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01236S26-AMD03", counterparty: "PT Perusahaan Perdagangan Internasional Nusantara Sejahtera Tbk", amount: "IDR 12,500,000,000,000.00" },
+  { date: new Date(2026, 7, 20), title: "Limit facility expiry", counterparty: "Standby Letter of Credit Facility – Syndicated (Tranche B)", amount: "USD 1,250,000,000.00", amendExtend: true },
+  { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00301A25", counterparty: "Jo", amount: "IDR 0.00" },
+  { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01237S26", counterparty: "Đặng Thị Ngọc Hân Trading Co., Ltd.", amount: "VND 25,000,000,000.00" },
+  { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00302A25", counterparty: "Mitsubishi UFJ Trust and Banking Corporation, Singapore Branch", amount: "JPY 1,234,567,890,123.00", amendExtend: true },
+  { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01239S26", counterparty: "王秀英贸易有限公司", amount: "CNY 88,000.00" },
+  { date: new Date(2026, 7, 27), title: "BG expiry - IGTRG00298A25", counterparty: "PT Pertamina (Persero)", amount: "IDR 2,800,980,000.00", amendExtend: true },
+  { date: new Date(2026, 7, 31), title: "Limit facility expiry", counterparty: "Bank Guarantee Limit", amount: "IDR 690,000,000.00" },
+  ...Array.from({ length: 60 }, (_, i) => ({
+    date: new Date(2026, 8, 1 + (i % 30)),
+    title: `Export LC expiry - ELTRG0${1300 + i}S26`,
+    counterparty: i % 2 ? "Wilmar Trading Pte. Ltd." : "Cargill Asia Pacific",
+    amount: `USD ${(96_800 + i * 1_250).toLocaleString("en-US")}.00`,
+  })),
+];
+
+const expiryData = (): Expiry[] => {
+  const dataset = currentDataset();
+  if (dataset === "worst") return worstExpiries;
+  if (dataset === "empty") return [];
+  if (dataset === "one") return expiries.slice(0, 1);
+  return expiries;
+};
 
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const COLOR_TODAY = "#099697";
@@ -99,26 +126,28 @@ function ExpiryItem({ item }: { item: Expiry }) {
   const day = String(item.date.getDate()).padStart(2, "0");
   const month = item.date.toLocaleString("en-US", { month: "short" }).toUpperCase();
   return (
-    <li className="border-b border-[#f5f5f5] flex gap-[16px] h-[74px] items-center pl-[8px] pr-[12px] py-[14px] w-full">
+    <li className="border-b border-[#f5f5f5] flex gap-[16px] min-h-[74px] items-center pl-[8px] pr-[12px] py-[14px] w-full">
       <div className="bg-[#f9f9f9] flex flex-col items-center justify-center rounded-[8px] shrink-0 size-[40px] font-['TT_Interphases_Pro:Medium'] leading-[18px] text-[#171717] text-[12px] text-center">
         <span>{day}</span>
         <span>{month}</span>
       </div>
       <div className="flex flex-[1_0_0] min-w-px gap-[8px] items-center">
-        <div className="h-[46px] w-[4px] rounded-[24px] shrink-0" style={{ background: item.amendExtend ? COLOR_AMEND : COLOR_EXPIRY }} />
+        <div className="self-stretch min-h-[46px] w-[4px] rounded-[24px] shrink-0" style={{ background: item.amendExtend ? COLOR_AMEND : COLOR_EXPIRY }} />
         <div className="flex flex-[1_0_0] min-w-px flex-col gap-[2px]">
           <div className="flex flex-wrap gap-[4px_8px] items-center">
-            <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#0e0e0e] text-[16px] truncate">{item.title}</p>
+            <p title={item.title} className="min-w-0 max-w-full font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#0e0e0e] text-[16px] truncate">{item.title}</p>
             {item.amendExtend && (
               <span className="bg-[#eff6ff] border border-[#bfdbfe] flex h-[22px] items-center px-[8px] rounded-[16px] shrink-0 font-['TT_Interphases_Pro:DemiBold'] leading-[1.2] text-[#1d4ed8] text-[12px] whitespace-nowrap">
                 Amend Extend
               </span>
             )}
           </div>
-          <div className="flex gap-[8px] items-center font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#4e4e4e] text-[14px] whitespace-nowrap">
-            <span className="truncate">{item.counterparty}</span>
-            <img alt="" className="block size-[4px] shrink-0" src={imgSeparator} />
-            <span>{item.amount}</span>
+          <div className="flex flex-wrap gap-x-[8px] items-center font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#4e4e4e] text-[14px] whitespace-nowrap">
+            <span title={item.counterparty} className="min-w-0 max-w-full truncate">{item.counterparty}</span>
+            <span className="flex gap-[8px] items-center tabular-nums">
+              <img alt="" className="block size-[4px] shrink-0" src={imgSeparator} />
+              {item.amount}
+            </span>
           </div>
         </div>
       </div>
@@ -135,7 +164,8 @@ function ExpiryList({ label, items }: { label: string; items: Expiry[] }) {
   const measure = () => {
     const el = ref.current;
     if (!el || el.scrollHeight <= el.clientHeight) return setThumb(null);
-    const height = (el.clientHeight / el.scrollHeight) * el.clientHeight;
+    // Long lists would shrink the thumb to a sliver; keep it grabbable-looking.
+    const height = Math.max(24, (el.clientHeight / el.scrollHeight) * el.clientHeight);
     const top = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * (el.clientHeight - height);
     setThumb({ top, height });
   };
@@ -195,6 +225,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
   const [selected, setSelected] = useState<Date | null>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
+  const [expiries] = useState(expiryData);
 
   // Simulated fetch per visible month.
   useEffect(() => {
@@ -243,7 +274,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
       <header className="flex flex-col gap-[12px] w-full">
         <div className="flex flex-col gap-[2px]">
           <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Calendar</h2>
-          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] truncate">Expiry dates of your products and limit facilities.</p>
+          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Expiry dates of your products and limit facilities.</p>
         </div>
         <div className="h-px w-full bg-[#e5e5e5]" />
       </header>

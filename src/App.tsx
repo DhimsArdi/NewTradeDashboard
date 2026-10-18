@@ -4,6 +4,7 @@ import TransactionHistoryWidget from "./TransactionHistoryWidget";
 import ReportOverviewWidget from "./ReportOverviewWidget";
 import CalendarWidget from "./CalendarWidget";
 import LimitFacilityWidget from "./LimitFacilityWidget";
+import { DevDataToggle, useDataset } from "./devData";
 
 const assetPathPrefix = "/assets";
 const imgLogo = `${assetPathPrefix}/f2ae2.png`;
@@ -36,6 +37,8 @@ const imgChevronRight1 = `${assetPathPrefix}/bc2d8.svg`;
 export default function TradeDashboardMaster() {
   const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(false);
   const [notice, setNotice] = useState("");
+  // Dev-only fixture switch; remounting the widgets reloads them with the chosen dataset.
+  const dataset = useDataset();
 
   const handleDashboardClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = (event.target as HTMLElement).closest<HTMLElement>("[data-name]");
@@ -77,9 +80,9 @@ export default function TradeDashboardMaster() {
               </div>
               <div className="@min-[880px]:flex-row content-stretch flex flex-col gap-[24px] items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19891" data-name="Container <>">
                 <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-start min-w-px relative w-full" data-node-id="2:19892" data-name="Left-Column">
-                  <LimitFacilityWidget className="shrink-0 w-full" />
-                  <TransactionHistoryWidget className="shrink-0 w-full" />
-                  <ReportOverviewWidget className="shrink-0 w-full" />
+                  <LimitFacilityWidget key={dataset} className="shrink-0 w-full" />
+                  <TransactionHistoryWidget key={dataset} className="shrink-0 w-full" />
+                  <ReportOverviewWidget key={dataset} className="shrink-0 w-full" />
                 </div>
                 <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-center min-w-px relative w-full" data-node-id="2:20089" data-name="Right-Column">
                   <div className="content-stretch flex gap-[24px] items-stretch relative shrink-0 w-full" data-node-id="2:20090">
@@ -136,7 +139,7 @@ export default function TradeDashboardMaster() {
                       </div>
                     </div>
                   </div>
-                  <CalendarWidget className="shrink-0 w-full" />
+                  <CalendarWidget key={dataset} className="shrink-0 w-full" />
                   <div className="bg-white border border-[#e5e5e5] border-solid content-stretch flex flex-col gap-[16px] items-center overflow-clip p-[24px] relative rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] shrink-0 w-full" data-node-id="2:20198" data-name="Widget / Quick Access (input PO)">
                     <div className="content-stretch flex flex-col gap-[20px] isolate items-start relative shrink-0 w-full" data-node-id="2:20199" data-name="Section header">
                       <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full z-[2]" data-node-id="I2:20199;3932:6956" data-name="Content">
@@ -225,6 +228,7 @@ export default function TradeDashboardMaster() {
           {notice}
         </div>
       )}
+      <DevDataToggle />
     </div>
   );
 }

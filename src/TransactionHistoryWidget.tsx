@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { currentDataset } from "./devData";
 
 const a = (file: string) => `/assets/transaction-history/${file}`;
 const imgChevronDown = a("chevronDown.svg");
@@ -71,6 +72,39 @@ const channels: Channel[] = [
   },
 ];
 
+// Stress-test fixtures for the dev data toggle.
+const worstChannels: Channel[] = [
+  {
+    label: "Standby Letter of Credit – Outward Guarantee",
+    defaults: ["Issued", "Amended – Increase Amount", "Amended – Extend Expiry", "Claim Received", "Claim Paid", "Expired / Released"],
+    events: [
+      { label: "Issued", color: "#ff6b00", monthly: [1284, 0, 1102, 976, 1530, 812], weekly: [310, 288, 0, 342, 401, 275, 198, 366], volume: [2_600_000, 0, 2_100_000, 1_900_000, 2_950_000, 1_400_000] },
+      { label: "Amended – Increase Amount", color: "#ffa666", monthly: [214, 0, 190, 160, 233, 98], weekly: [52, 44, 0, 61, 70, 38, 22, 49], volume: [410_000, 0, 360_000, 300_000, 450_000, 190_000] },
+      { label: "Amended – Extend Expiry", color: "#ffd3b2", monthly: [96, 0, 80, 71, 112, 40], weekly: [20, 18, 0, 25, 31, 14, 9, 22], volume: [120_000, 0, 100_000, 90_000, 140_000, 50_000] },
+      { label: "Claim Received", color: "#9ca3af", monthly: [12, 0, 9, 4, 17, 1], weekly: [3, 2, 0, 4, 5, 1, 0, 2], volume: [80_000, 0, 60_000, 30_000, 110_000, 9_000] },
+      { label: "Claim Paid", color: "#6b7280", monthly: [7, 0, 5, 3, 11, 1], weekly: [2, 1, 0, 2, 3, 1, 0, 1], volume: [50_000, 0, 40_000, 20_000, 70_000, 7_000] },
+      { label: "Expired / Released", color: "#e5e7eb", monthly: [402, 0, 377, 296, 455, 230], weekly: [98, 90, 0, 110, 121, 84, 60, 101], volume: [700_000, 0, 650_000, 520_000, 800_000, 400_000] },
+    ],
+  },
+  ...channels,
+];
+const zeroed = (list: Channel[]): Channel[] =>
+  list.map((c) => ({ ...c, events: c.events.map((e) => ({ ...e, monthly: e.monthly.map(() => 0), weekly: e.weekly.map(() => 0), volume: e.volume.map(() => 0) })) }));
+const singleChannel: Channel[] = [
+  {
+    ...channels[0],
+    defaults: ["Financed"],
+    events: [{ ...channels[0].events[1], monthly: [0, 0, 0, 0, 1, 0], weekly: [0, 0, 0, 0, 1, 0, 0, 0], volume: [0, 0, 0, 0, 1, 0] }],
+  },
+];
+const channelData = (): Channel[] => {
+  const dataset = currentDataset();
+  if (dataset === "worst") return worstChannels;
+  if (dataset === "empty") return zeroed(channels);
+  if (dataset === "one") return singleChannel;
+  return channels;
+};
+
 const showByOptions = ["Transactions", "Volume"] as const;
 type ShowBy = (typeof showByOptions)[number];
 
@@ -87,6 +121,7 @@ const Y_AXIS_WIDTH = 40;
 const BARS_LEFT = 44;
 const DIM_OPACITY = "opacity-35";
 const BAR_STAGGER_MS = 30;
+const MIN_SEGMENT = 3;
 const TOOLTIP_W = 320;
 const TOOLTIP_MIN_W = 240;
 const TOOLTIP_OFFSET = 24; // half a bar + 12px gap
@@ -107,7 +142,7 @@ const niceMax = (max: number, integer: boolean) => {
 // Axis labels share the unit of the top tick, e.g. 1M, 0.75M, 0.5M.
 const axisLabel = (v: number, top: number) => {
   if (v === 0) return "0";
-  const [div, suffix] = top >= 1e9 ? [1e9, "B"] : top >= 1e6 ? [1e6, "M"] : top >= 1e3 ? [1e3, "K"] : [1, ""];
+  const [div, suffix] = top >= 1e12 ? [1e12, "T"] : top >= 1e9 ? [1e9, "B"] : top >= 1e6 ? [1e6, "M"] : top >= 1e3 ? [1e3, "K"] : [1, ""];
   return `${+(v / div).toFixed(2)}${suffix}`;
 };
 
@@ -126,11 +161,13 @@ const forcedState = () => {
   return v === "empty" || v === "error" || v === "loading" || v === "partial" ? v : null;
 };
 const ownedChannels = () => {
+  const all = channelData();
   const keys = params().get("txChannels")?.split(",").map((k) => k.trim().toLowerCase());
-  const owned = keys ? channels.filter((c) => keys.some((k) => k && c.label.toLowerCase().startsWith(k))) : [];
-  return owned.length ? owned : channels;
+  const owned = keys ? all.filter((c) => keys.some((k) => k && c.label.toLowerCase().startsWith(k))) : [];
+  return owned.length ? owned : all;
 };
 const ownedCurrencies = (): Currency[] => {
+  if (currentDataset() === "one") return ["USD"];
   const n = Number(params().get("txCurrencies"));
   return n > 0 ? allCurrencies.slice(0, n) : [...allCurrencies];
 };
@@ -164,7 +201,7 @@ function MenuItem({ label, selected, onSelect }: { label: string; selected: bool
         onClick={onSelect}
         className={`flex w-full items-center gap-[8px] p-[8px] rounded-[6px] text-left hover:bg-[#fafafa] focus-visible:bg-[#fafafa] outline-none ${selected ? "bg-[#fafafa]" : ""}`}
       >
-        <span className="flex-1 py-[2px] font-['TT_Interphases_Pro:Medium'] leading-[20px] text-[#404040] text-[14px] whitespace-nowrap">{label}</span>
+        <span className="flex-1 py-[2px] font-['TT_Interphases_Pro:Medium'] leading-[20px] text-[#404040] text-[14px]">{label}</span>
         {selected && <img alt="" className="block size-[20px] shrink-0" src={imgMenuCheck} />}
       </button>
     </li>
@@ -190,15 +227,15 @@ function Select<T extends string>({
         onClick={() => onOpen(!open)}
         className={`th-press bg-white border-solid flex gap-[8px] items-center rounded-[8px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] w-full text-left outline-none ${focusRing} ${open ? "border-2 border-[#ff8a2d] px-[11px] py-[7px]" : "border border-[#d4d4d4] px-[12px] py-[8px] hover:border-[#a3a3a3]"}`}
       >
-        <span className="flex-1 min-w-0 truncate font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#171717] text-[14px]">{value}</span>
+        <span title={value} className="flex-1 min-w-0 truncate font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#171717] text-[14px]">{value}</span>
         <img alt="" className="block size-[18px] shrink-0" src={imgChevronDown} />
       </button>
       {open && (
         <ul
           role="listbox"
           aria-label={label}
-          className={`th-pop origin-top-left absolute left-0 top-[calc(100%+4px)] z-30 min-w-full bg-white border border-[#d4d4d4] rounded-[8px] py-[8px] ${menuShadow}`}
-          style={{ width: menuWidth }}
+          className={`th-pop origin-top-left absolute left-0 top-[calc(100%+4px)] z-30 bg-white border border-[#d4d4d4] rounded-[8px] py-[8px] ${menuShadow}`}
+          style={{ width: "max-content", minWidth: `max(100%, ${menuWidth}px)`, maxWidth: "min(320px, calc(100vw - 32px))" }}
         >
           {options.map((option) => (
             <MenuItem
@@ -251,7 +288,7 @@ function EventsFilter({
         <div
           role="group"
           aria-label={`${channel.label} events`}
-          className={`th-pop origin-top-right absolute right-0 top-[calc(100%+4px)] z-30 w-[240px] bg-white border border-[#e5e5e5] rounded-[8px] py-[4px] ${menuShadow}`}
+          className={`th-pop origin-top-right absolute right-0 top-[calc(100%+4px)] z-30 w-max min-w-[240px] max-w-[min(320px,calc(100vw-32px))] bg-white border border-[#e5e5e5] rounded-[8px] py-[4px] ${menuShadow}`}
         >
           {channel.events.map((e) => {
             const checked = selected.includes(e.label);
@@ -268,7 +305,7 @@ function EventsFilter({
               >
                 <Checkbox checked={checked} disabled={locked} />
                 <span className="rounded-[2px] shrink-0 size-[10px]" style={{ background: e.color }} />
-                <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#404040] text-[14px] whitespace-nowrap">{e.label}</span>
+                <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#404040] text-[14px]">{e.label}</span>
               </button>
             );
           })}
@@ -413,15 +450,6 @@ export default function TransactionHistoryWidget({ className = "" }: { className
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartWidth, setChartWidth] = useState(0);
   const forced = forcedState();
-  const hasChart = status !== "empty" && status !== "error";
-
-  useEffect(() => {
-    const el = chartRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [hasChart]);
 
   // Simulated fetch whenever the query changes; toggling events filters client-side.
   useEffect(() => {
@@ -459,6 +487,17 @@ export default function TransactionHistoryWidget({ className = "" }: { className
   });
   const totals = labels.map((_, i) => series.reduce((s, e) => s + e.values[i], 0));
   const top = niceMax(Math.max(0, ...totals), !isVolume);
+  // A successful response with nothing in it gets the empty state, not a blank grid.
+  const noData = status === "ready" && totals.every((t) => t === 0);
+  const hasChart = status !== "empty" && status !== "error" && !noData;
+
+  useEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setChartWidth(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [hasChart]);
   const ticks = Array.from({ length: AXIS_STEPS + 1 }, (_, i) => (top / AXIS_STEPS) * (AXIS_STEPS - i));
   const fmt = (v: number) => (isVolume ? money(v, currency) : v.toLocaleString("en-US"));
   const fmtTotal = (v: number) => (v === 0 ? "No transactions" : isVolume ? money(v, currency) : `${v.toLocaleString("en-US")} transaction${v === 1 ? "" : "s"}`);
@@ -497,7 +536,7 @@ export default function TransactionHistoryWidget({ className = "" }: { className
       <header className="flex flex-wrap gap-[12px_16px] items-start w-full">
         <div className="flex flex-[1_1_200px] min-w-0 flex-col gap-[2px] justify-center self-stretch">
           <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Transaction History</h2>
-          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] truncate">{subtitle}</p>
+          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">{subtitle}</p>
         </div>
         <div role="group" aria-label="Period" className="bg-[#fafafa] border border-[#e5e5e5] flex gap-[2px] items-center rounded-[8px] shrink-0">
           {(["Weekly", "Monthly"] as const).map((p) => {
@@ -600,7 +639,7 @@ export default function TransactionHistoryWidget({ className = "" }: { className
                           <div
                             key={s.label}
                             className="w-full shrink-0"
-                            style={{ height: Math.max(1, (s.values[i] / top) * PLOT_HEIGHT - (j > 0 ? 2 : 0)), background: s.color }}
+                            style={{ height: Math.max(MIN_SEGMENT, (s.values[i] / top) * PLOT_HEIGHT - (j > 0 ? 2 : 0)), background: s.color }}
                           />
                         ))}
                       </div>

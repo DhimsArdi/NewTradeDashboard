@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { currentDataset } from "./devData";
 
 const a = (file: string) => `/assets/${file}`;
 const imgChevronDown = a("transaction-history/chevronDown.svg");
@@ -32,7 +33,17 @@ type Status = "loading" | "ready" | "error";
 // ?lfFacilities=bpl|ncl|none limits the facilities the customer owns (none hides the widget).
 const params = () => new URLSearchParams(window.location.search);
 const scenario = () => params().get("lfState");
+// Stress-test fixture for the dev data toggle: a huge untouched limit and an over-limit facility.
+const worstFacilities: Facility[] = [
+  { name: "Bill Purchasing Line", total: 125_000_000_000_000, outstanding: 0, expiry: "30 Dec 2026" },
+  { name: "Non Cash Loan", total: 690_000_000, outstanding: 731_500_000, expiry: "31 Mar 2027" },
+];
+
 const ownedFacilities = (): Facility[] => {
+  const dataset = currentDataset();
+  if (dataset === "worst") return worstFacilities;
+  if (dataset === "empty") return [];
+  if (dataset === "one") return baseFacilities.slice(0, 1);
   let list = baseFacilities;
   if (scenario() === "full") list = list.map((f) => (f.name === "Non Cash Loan" ? { ...f, outstanding: f.total } : f));
   if (scenario() === "large") {
@@ -113,11 +124,25 @@ function FacilitySelect({ value, options, onChange }: { value: string; options: 
   );
 }
 
+// Bold 24px headline amount; shrinks with the card width for very long amounts so digits are never split or cut.
+function FitAmount({ value }: { value: string }) {
+  return (
+    <div className="w-full [container-type:inline-size]">
+      <p
+        className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] whitespace-nowrap tabular-nums"
+        style={{ fontSize: `min(24px, calc(100cqi / ${(value.length * 0.52).toFixed(2)}))` }}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-[8px] w-full">
-      <p className="flex-1 min-w-px font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">{label}</p>
-      <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#404040] text-[16px] text-right whitespace-nowrap">{value}</p>
+    <div className="flex flex-wrap items-center gap-x-[8px] w-full">
+      <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] whitespace-nowrap">{label}</p>
+      <p className="ml-auto font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#404040] text-[16px] text-right whitespace-nowrap tabular-nums">{value}</p>
     </div>
   );
 }
@@ -201,7 +226,7 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
     >
       <header className="flex flex-col gap-[2px] w-full">
         <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Limit Facility</h2>
-        <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] truncate">Select a facility to see its limit details.</p>
+        <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Select a facility to see its limit details.</p>
       </header>
 
       {status === "error" ? (
@@ -276,7 +301,7 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
               )}
               <div key={facility.name} className="cal-fade-in flex flex-col gap-[6px] w-full">
                 <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">Available limit</p>
-                <p className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[24px]">{money(facility.total - facility.outstanding)}</p>
+                <FitAmount value={money(facility.total - facility.outstanding)} />
               </div>
             </div>
             <div className="py-[4px] w-full">
@@ -302,7 +327,8 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
                     </div>
                     <UsageBar pct={pct} delay={i * 60} />
                     <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">
-                      {money(f.total - f.outstanding)} available of {money(f.total)}
+                      <span className="whitespace-nowrap">{money(f.total - f.outstanding)}</span> available of{" "}
+                      <span className="whitespace-nowrap">{money(f.total)}</span>
                     </p>
                   </li>
                 );

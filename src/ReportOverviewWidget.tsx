@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { currentDataset } from "./devData";
 
 const a = (file: string) => `/assets/report-overview/${file}`;
 const imgFile06 = a("file06.svg");
@@ -99,6 +100,17 @@ const defaultReports: ReportSummary[] = [
   { id: "limit-facility", title: "Limit Facility", description: "Limit and usage per facility.", hasData: true },
 ];
 
+// Stress-test fixture for the dev data toggle: descriptions as long as the API may send.
+const worstReports: ReportSummary[] = [
+  {
+    id: "transaction-history",
+    title: "Transaction History",
+    description: "Monthly completed transactions by event and product, including amendments, claims and released guarantees across all channels.",
+    hasData: true,
+  },
+  { id: "limit-facility", title: "Limit Facility", description: "Limit, outstanding and availability per facility, including syndicated and over-limit facilities.", hasData: false },
+];
+
 type Status = "loading" | "ready" | "error";
 
 // QA hooks: ?reportState=loading|error|empty|single forces a widget state, ?reportDownload=fail forces a failed download.
@@ -113,6 +125,10 @@ function fetchReportOverview(): Promise<ReportSummary[]> {
       if (forced === "empty")
         return resolve(defaultReports.map((r) => (r.id === "transaction-history" ? { ...r, hasData: false, description: "No transactions to report yet." } : r)));
       if (forced === "single") return resolve(defaultReports.filter((r) => r.id === "transaction-history"));
+      const dataset = currentDataset();
+      if (dataset === "worst") return resolve(worstReports);
+      if (dataset === "empty") return resolve(defaultReports.map((r) => ({ ...r, hasData: false, description: "Nothing to report yet." })));
+      if (dataset === "one") return resolve(defaultReports.slice(0, 1));
       resolve(defaultReports);
     }, 700),
   );
@@ -165,7 +181,7 @@ function SectionHeader() {
   return (
     <div className="[word-break:break-word] content-stretch flex flex-col gap-[2px] items-start not-italic relative shrink-0 w-full" data-name="Section header">
       <p className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] relative shrink-0 text-[#171717] text-[18px] w-full">Report Overview</p>
-      <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] overflow-hidden relative shrink-0 text-[#525252] text-[14px] text-ellipsis w-full whitespace-nowrap">
+      <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] relative shrink-0 text-[#525252] text-[14px] w-full">
         Download a report with the default information, or choose your own.
       </p>
     </div>
@@ -183,12 +199,13 @@ function ReportRow({ report, preparing, onDownload }: { report: ReportSummary; p
       onClick={() => !disabled && !preparing && onDownload()}
     >
       <FeaturedIcon src={imgFile06} />
-      <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-[2px] items-start min-w-px not-italic overflow-clip relative whitespace-nowrap">
-        <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] overflow-hidden relative shrink-0 text-[#171717] text-[14px] text-ellipsis w-full">{report.title}</p>
-        <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] overflow-hidden relative shrink-0 text-[#525252] text-[12px] text-ellipsis w-full">{report.description}</p>
+      <div className="content-stretch flex flex-[1_0_0] flex-col gap-[2px] items-start min-w-px not-italic relative">
+        <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] relative shrink-0 text-[#171717] text-[14px] w-full">{report.title}</p>
+        <p title={report.description} className="font-['TT_Interphases_Pro:Regular'] leading-[18px] line-clamp-2 relative shrink-0 text-[#525252] text-[12px] w-full">{report.description}</p>
       </div>
       <button
         aria-busy={preparing}
+        aria-label={`Download ${report.title} report`}
         className={`content-stretch flex items-center justify-center overflow-clip px-[12px] py-[8px] relative rounded-[9999px] shrink-0 transition-colors ${
           preparing ? "bg-[#fafafa] gap-[6px] cursor-progress" : "gap-[4px]"
         } ${disabled ? "cursor-not-allowed" : preparing ? "" : "cursor-pointer group-hover:bg-[#fafafa]"}`}
@@ -209,7 +226,7 @@ function ReportRow({ report, preparing, onDownload }: { report: ReportSummary; p
           </div>
         )}
         <span
-          className={`font-['TT_Interphases_Pro:DemiBold'] leading-[20px] px-[2px] text-[14px] whitespace-nowrap ${
+          className={`@max-[400px]:sr-only font-['TT_Interphases_Pro:DemiBold'] leading-[20px] px-[2px] text-[14px] whitespace-nowrap ${
             disabled ? "text-[#9ca3af]" : preparing ? "text-[#374151]" : "text-[#404040] group-hover:text-[#262626]"
           }`}
         >
@@ -720,7 +737,7 @@ export default function ReportOverviewWidget({ className = "" }: { className?: s
 
   return (
     <div
-      className={`bg-white border border-[#e5e5e5] border-solid content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative rounded-[16px] ${className}`}
+      className={`@container bg-white border border-[#e5e5e5] border-solid content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative rounded-[16px] ${className}`}
       data-node-id="79:7"
       data-name="Widget / Report Overview"
     >
