@@ -11,7 +11,8 @@ const imgRefresh = a("transaction-history/refresh.svg");
 
 // ---------- Demo data ----------
 
-// All facilities share one currency; order is fixed.
+// All facilities share one currency. The dropdown and the usage summary list the same facilities in the
+// same order (Figma 24:48271). Expiry dates other than Bill Purchasing Line's are demo values.
 type Facility = { name: string; total: number; outstanding: number; expiry: string };
 
 const CURRENCY = "IDR";
@@ -20,32 +21,35 @@ const COLOR_AVAILABLE = "#6bc0c1";
 
 const baseFacilities: Facility[] = [
   { name: "Bill Purchasing Line", total: 900_000_000, outstanding: 500_000_000, expiry: "30 Dec 2026" },
-  { name: "Non Cash Loan", total: 690_000_000, outstanding: 483_000_000, expiry: "31 Mar 2027" },
-];
-
-// The dropdown lists more facilities than the usage summary (Figma 381:16403): the first summary
-// facility followed by these. Non Cash Loan stays summary-only. Amounts are demo values.
-const dropdownOnlyFacilities: Facility[] = [
-  { name: "Sublimit Export", total: 300_000_000, outstanding: 120_000_000, expiry: "30 Dec 2026" },
-  { name: "Local GB Facility Line", total: 450_000_000, outstanding: 315_000_000, expiry: "31 Mar 2027" },
-  { name: "Guarantee Line", total: 250_000_000, outstanding: 50_000_000, expiry: "30 Jun 2027" },
-  { name: "Sublimit Bank Guarantee", total: 150_000_000, outstanding: 135_000_000, expiry: "31 Mar 2027" },
+  { name: "Sub Limit Export", total: 600_000_000, outstanding: 270_000_000, expiry: "30 Dec 2026" },
+  { name: "Local GB Facility Line", total: 1_200_000_000, outstanding: 840_000_000, expiry: "31 Mar 2027" },
+  { name: "Guarantee Line", total: 750_000_000, outstanding: 225_000_000, expiry: "30 Jun 2027" },
+  { name: "Sub Limit Bank Guarantee", total: 500_000_000, outstanding: 410_000_000, expiry: "31 Mar 2027" },
 ];
 
 const money = (n: number) => `${CURRENCY} ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usedPct = (f: Facility) => (f.total > 0 ? Math.min(100, Math.round((f.outstanding / f.total) * 100)) : 0);
 
+// Usage summary rows: 58px tall, 20px apart. The list shows three and a peek of the fourth, then scrolls.
+const ROW_H = 58;
+const ROW_GAP = 20;
+const LIST_MAX_H = 248;
+const listHeight = (n: number) => Math.min(LIST_MAX_H, n * ROW_H + (n - 1) * ROW_GAP);
+
 type Status = "loading" | "ready" | "error";
 
 // QA hooks:
-// ?lfState=loading|error forces a widget state; full = Non Cash Loan fully used; large = amounts in trillions.
-// ?lfFacilities=bpl|ncl|none limits the facilities the customer owns (none hides the widget).
+// ?lfState=loading|error forces a widget state; full = the last facility fully used; large = amounts in trillions.
+// ?lfFacilities=<n>|none keeps the first n facilities the customer owns (none hides the widget).
 const params = () => new URLSearchParams(window.location.search);
 const scenario = () => params().get("lfState");
-// Stress-test fixture for the dev data toggle: a huge untouched limit and an over-limit facility.
+// Stress-test fixture for the dev data toggle: a huge untouched limit, an over-limit facility, long names, and a long list.
 const worstFacilities: Facility[] = [
   { name: "Bill Purchasing Line", total: 125_000_000_000_000, outstanding: 0, expiry: "30 Dec 2026" },
-  { name: "Non Cash Loan", total: 690_000_000, outstanding: 731_500_000, expiry: "31 Mar 2027" },
+  { name: "Sub Limit Bank Guarantee", total: 690_000_000, outstanding: 731_500_000, expiry: "31 Mar 2027" },
+  { name: "Standby Letter of Credit Facility – Syndicated (Tranche B)", total: 20_000_000_000_000, outstanding: 19_999_000_000_000, expiry: "31 Dec 2030" },
+  ...baseFacilities.slice(1, 4),
+  { name: "Pre-Shipment Financing Line", total: 350_000_000, outstanding: 1_000_000, expiry: "30 Sep 2027" },
 ];
 
 const ownedFacilities = (): Facility[] => {
@@ -54,22 +58,13 @@ const ownedFacilities = (): Facility[] => {
   if (dataset === "empty") return [];
   if (dataset === "one") return baseFacilities.slice(0, 1);
   let list = baseFacilities;
-  if (scenario() === "full") list = list.map((f) => (f.name === "Non Cash Loan" ? { ...f, outstanding: f.total } : f));
-  if (scenario() === "large") {
-    list = [
-      { ...list[0], total: 20_000_000_000_000, outstanding: 7_500_000_000_000 },
-      { ...list[1], total: 6_900_000_000_000, outstanding: 4_830_000_000_000 },
-    ];
-  }
+  if (scenario() === "full") list = list.map((f, i) => (i === list.length - 1 ? { ...f, outstanding: f.total } : f));
+  if (scenario() === "large") list = list.map((f, i) => (i === 0 ? { ...f, total: 20_000_000_000_000, outstanding: 7_500_000_000_000 } : { ...f, total: f.total * 10_000, outstanding: f.outstanding * 10_000 }));
   const owned = params().get("lfFacilities");
   if (owned === "none") return [];
-  if (owned === "bpl") return list.filter((f) => f.name === "Bill Purchasing Line");
-  if (owned === "ncl") return list.filter((f) => f.name === "Non Cash Loan");
-  return list;
+  const n = Number(owned);
+  return n > 0 ? list.slice(0, n) : list;
 };
-
-// One owned facility shows as plain text, so the extra dropdown entries only apply when there is a dropdown.
-const dropdownFacilities = (summary: Facility[]): Facility[] => (summary.length > 1 ? [summary[0], ...dropdownOnlyFacilities] : summary);
 
 // ---------- Building blocks ----------
 
@@ -205,12 +200,71 @@ function UsageHeader({ loading }: { loading: boolean }) {
   );
 }
 
+// Native overlay scrollbars hide until scrolled, so the thumb is drawn here and kept visible (as in the calendar list).
+function UsageList({ facilities }: { facilities: Facility[] }) {
+  const ref = useRef<HTMLUListElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+
+  // Runs on every scroll event, so it writes straight to the DOM instead of re-rendering the list.
+  const measure = () => {
+    const el = ref.current;
+    const thumb = thumbRef.current;
+    if (!el || !thumb) return;
+    const overflow = el.scrollHeight > el.clientHeight + 1;
+    if (el.dataset.overflow !== String(overflow)) el.dataset.overflow = String(overflow);
+    thumb.style.display = overflow ? "block" : "none";
+    if (!overflow) return;
+    const height = Math.max(24, (el.clientHeight / el.scrollHeight) * el.clientHeight);
+    const top = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * (el.clientHeight - height);
+    thumb.style.height = `${height}px`;
+    thumb.style.transform = `translateY(${top}px)`;
+  };
+
+  useEffect(() => {
+    measure();
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [facilities]);
+
+  return (
+    <div className="relative w-full" style={{ maxHeight: LIST_MAX_H }}>
+      <ul
+        ref={ref}
+        aria-label="Usage by facility"
+        onScroll={measure}
+        className="cal-scroll flex flex-col gap-[20px] w-full overflow-x-clip overflow-y-auto data-[overflow=true]:pr-[12px]"
+        style={{ maxHeight: LIST_MAX_H }}
+      >
+        {facilities.map((f, i) => {
+          const pct = usedPct(f);
+          return (
+            <li key={f.name} className="flex flex-col gap-[6px] w-full shrink-0">
+              <div className="flex items-start justify-between gap-[8px] leading-[20px] text-[14px] whitespace-nowrap w-full">
+                <p title={f.name} className="font-['TT_Interphases_Pro:DemiBold'] text-[#171717] truncate">{f.name}</p>
+                <p className="font-['TT_Interphases_Pro:Regular'] text-[#404040]">{pct}% used</p>
+              </div>
+              <UsageBar pct={pct} delay={Math.min(i, 3) * 60} />
+              <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">
+                <span className="whitespace-nowrap">{money(f.total - f.outstanding)}</span> available of{" "}
+                <span className="whitespace-nowrap">{money(f.total)}</span>
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+      <div ref={thumbRef} aria-hidden className="pointer-events-none absolute right-0 top-0 hidden w-[4px] rounded-[2px] bg-[#d4d4d4]" />
+    </div>
+  );
+}
+
 // ---------- Widget ----------
 
 export default function LimitFacilityWidget({ className = "" }: { className?: string }) {
   const [facilities] = useState(ownedFacilities);
-  const [choices] = useState(() => dropdownFacilities(facilities));
-  const [selectedName, setSelectedName] = useState(choices[0]?.name ?? "");
+  const [selectedName, setSelectedName] = useState(facilities[0]?.name ?? "");
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -226,10 +280,10 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
   // No facility: the widget is not shown at all.
   if (!facilities.length) return null;
 
-  const facility = choices.find((f) => f.name === selectedName) ?? choices[0];
-  const single = choices.length === 1;
-  // Content height with data, kept for loading/error so the card does not jump.
-  const bodyHeight = single ? 428 : 491;
+  const facility = facilities.find((f) => f.name === selectedName) ?? facilities[0];
+  const single = facilities.length === 1;
+  // Content height with data (info box + gap + usage header + list), kept for error so the card does not jump.
+  const bodyHeight = (single ? 234 : 250) + 16 + 89 + listHeight(facilities.length);
 
   return (
     <section
@@ -286,9 +340,9 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
           </div>
           <div className="flex flex-col gap-[16px] w-full">
             <UsageHeader loading />
-            <div className="flex flex-col gap-[20px] w-full">
-              {facilities.map((f, i) => (
-                <div key={f.name} className="flex flex-col gap-[6px] w-full">
+            <div className="flex flex-col gap-[20px] w-full overflow-hidden" style={{ height: listHeight(facilities.length) }}>
+              {facilities.slice(0, 4).map((f, i) => (
+                <div key={f.name} className="flex flex-col gap-[6px] w-full shrink-0">
                   <div className="flex justify-between w-full">
                     <Skel w={i === 0 ? 126 : 97} h={12} />
                     <Skel w={61} h={12} />
@@ -310,7 +364,7 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
               {single ? (
                 <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#171717] text-[16px]">{facility.name}</p>
               ) : (
-                <FacilitySelect value={facility.name} options={choices.map((f) => f.name)} onChange={setSelectedName} />
+                <FacilitySelect value={facility.name} options={facilities.map((f) => f.name)} onChange={setSelectedName} />
               )}
               <div key={facility.name} className="cal-fade-in flex flex-col gap-[6px] w-full">
                 <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">Available limit</p>
@@ -329,24 +383,7 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
 
           <div className="flex flex-col gap-[16px] w-full">
             <UsageHeader loading={false} />
-            <ul className="flex flex-col gap-[20px] w-full">
-              {facilities.map((f, i) => {
-                const pct = usedPct(f);
-                return (
-                  <li key={f.name} className="flex flex-col gap-[6px] w-full">
-                    <div className="flex items-start justify-between gap-[8px] leading-[20px] text-[14px] whitespace-nowrap w-full">
-                      <p className="font-['TT_Interphases_Pro:DemiBold'] text-[#171717] truncate">{f.name}</p>
-                      <p className="font-['TT_Interphases_Pro:Regular'] text-[#404040]">{pct}% used</p>
-                    </div>
-                    <UsageBar pct={pct} delay={i * 60} />
-                    <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">
-                      <span className="whitespace-nowrap">{money(f.total - f.outstanding)}</span> available of{" "}
-                      <span className="whitespace-nowrap">{money(f.total)}</span>
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
+            <UsageList facilities={facilities} />
           </div>
         </div>
       )}
