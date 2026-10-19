@@ -21,24 +21,24 @@ type Period = "Weekly" | "Monthly";
 const months = ["Mar", "Apr", "May", "Jun", "Jul", "Aug"];
 const monthNames = ["March", "April", "May", "June", "July", "August"];
 
-// Last 8 weeks, Monday–Sunday, starting Mon 23 Jun 2026.
-const weekStarts = Array.from({ length: 8 }, (_, i) => new Date(2026, 5, 23 + i * 7));
-const shortMonth = (d: Date) => d.toLocaleString("en-US", { month: "short" });
-const weekLabel = (d: Date) => `${d.getDate()} ${shortMonth(d)}`;
-const weekRange = (d: Date) => {
-  const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 6);
-  return end.getMonth() === d.getMonth()
-    ? `${d.getDate()} – ${end.getDate()} ${shortMonth(end)} ${end.getFullYear()}`
-    : `${weekLabel(d)} – ${weekLabel(end)} ${end.getFullYear()}`;
-};
+// Weekly is per day over the last 7 business days up to today (Tue 18 Aug 2026). Weekends are skipped;
+// holidays such as 17 Aug stay as empty days.
+const TODAY = new Date(2026, 7, 18);
+const businessDays: Date[] = [];
+for (const d = new Date(TODAY); businessDays.length < 7; d.setDate(d.getDate() - 1)) {
+  if (d.getDay() !== 0 && d.getDay() !== 6) businessDays.unshift(new Date(d));
+}
+const weekday = (d: Date) => d.toLocaleString("en-US", { weekday: "short" });
+const dayLabel = (d: Date) => (d.getTime() === TODAY.getTime() ? "Today" : `${weekday(d)} ${d.getDate()}`);
+const dayTitle = (d: Date) => `${weekday(d)}, ${d.getDate()} ${d.toLocaleString("en-US", { month: "short" })} ${d.getFullYear()}`;
 
 const periods: Record<Period, { labels: string[]; titles: string[]; unit: string; span: string }> = {
   Monthly: { labels: months, titles: monthNames.map((m) => `${m} 2026`), unit: "month", span: "last 6 months" },
-  Weekly: { labels: weekStarts.map(weekLabel), titles: weekStarts.map(weekRange), unit: "week", span: "last 8 weeks" },
+  Weekly: { labels: businessDays.map(dayLabel), titles: businessDays.map(dayTitle), unit: "day", span: "last 7 business days" },
 };
 
-// `volume` is the monthly amount in thousands of USD.
-type EventDef = { label: string; color: string; monthly: number[]; weekly: number[]; volume: number[] };
+// `daily` follows the Weekly business days; `volume` is the monthly amount in thousands of USD.
+type EventDef = { label: string; color: string; monthly: number[]; daily: number[]; volume: number[] };
 type Channel = { label: string; defaults: string[]; events: EventDef[] };
 
 const channels: Channel[] = [
@@ -46,28 +46,28 @@ const channels: Channel[] = [
     label: "Export LC",
     defaults: ["Document Presented", "Financed"],
     events: [
-      { label: "Document Presented", color: "#099697", monthly: [5, 4, 7, 6, 9, 3], weekly: [2, 1, 3, 2, 2, 3, 1, 1], volume: [340, 290, 390, 440, 550, 200] },
-      { label: "Financed", color: "#6bc0c1", monthly: [3, 2, 4, 3, 5, 2], weekly: [1, 1, 1, 0, 2, 1, 1, 0], volume: [200, 250, 300, 200, 350, 150] },
+      { label: "Document Presented", color: "#099697", monthly: [5, 4, 7, 6, 9, 11], daily: [1, 2, 2, 1, 1, 0, 1], volume: [340, 290, 390, 440, 550, 200] },
+      { label: "Financed", color: "#6bc0c1", monthly: [3, 2, 4, 3, 5, 4], daily: [1, 0, 1, 0, 1, 0, 0], volume: [200, 250, 300, 200, 350, 150] },
     ],
   },
   {
     label: "Outward Guarantee",
     defaults: ["Issued", "Amended"],
     events: [
-      { label: "Issued", color: "#ff6b00", monthly: [8, 5, 9, 7, 10, 4], weekly: [2, 3, 1, 2, 3, 2, 1, 1], volume: [420, 310, 480, 390, 520, 260] },
-      { label: "Amended", color: "#ffa666", monthly: [3, 2, 4, 3, 2, 1], weekly: [1, 0, 1, 1, 0, 1, 0, 0], volume: [90, 60, 120, 80, 70, 40] },
-      { label: "Claimed", color: "#9ca3af", monthly: [1, 0, 1, 0, 1, 0], weekly: [0, 0, 1, 0, 0, 0, 0, 0], volume: [60, 0, 45, 0, 80, 0] },
-      { label: "Expired", color: "#e5e7eb", monthly: [2, 4, 3, 5, 4, 2], weekly: [1, 1, 0, 1, 1, 1, 0, 1], volume: [30, 70, 50, 90, 60, 30] },
+      { label: "Issued", color: "#ff6b00", monthly: [8, 5, 9, 7, 10, 4], daily: [2, 3, 1, 2, 3, 0, 1], volume: [420, 310, 480, 390, 520, 260] },
+      { label: "Amended", color: "#ffa666", monthly: [3, 2, 4, 3, 2, 1], daily: [1, 0, 1, 1, 0, 0, 0], volume: [90, 60, 120, 80, 70, 40] },
+      { label: "Claimed", color: "#9ca3af", monthly: [1, 0, 1, 0, 1, 0], daily: [0, 0, 1, 0, 0, 0, 0], volume: [60, 0, 45, 0, 80, 0] },
+      { label: "Expired", color: "#e5e7eb", monthly: [2, 4, 3, 5, 4, 2], daily: [1, 1, 0, 1, 1, 0, 0], volume: [30, 70, 50, 90, 60, 30] },
     ],
   },
   {
     label: "Inward Guarantee",
     defaults: ["Advised", "Amended"],
     events: [
-      { label: "Advised", color: "#ff6b00", monthly: [4, 6, 3, 5, 7, 2], weekly: [1, 2, 1, 1, 2, 1, 0, 1], volume: [210, 330, 160, 270, 380, 110] },
-      { label: "Amended", color: "#ffa666", monthly: [2, 1, 2, 3, 2, 1], weekly: [0, 1, 0, 1, 0, 1, 0, 0], volume: [40, 20, 40, 60, 40, 20] },
-      { label: "Claim Instruction", color: "#9ca3af", monthly: [0, 1, 0, 1, 0, 0], weekly: [0, 0, 0, 0, 0, 0, 0, 0], volume: [0, 50, 0, 40, 0, 0] },
-      { label: "Expired", color: "#e5e7eb", monthly: [1, 2, 1, 0, 2, 1], weekly: [0, 1, 0, 0, 1, 0, 0, 0], volume: [20, 40, 20, 0, 40, 20] },
+      { label: "Advised", color: "#ff6b00", monthly: [4, 6, 3, 5, 7, 2], daily: [1, 2, 1, 1, 2, 0, 1], volume: [210, 330, 160, 270, 380, 110] },
+      { label: "Amended", color: "#ffa666", monthly: [2, 1, 2, 3, 2, 1], daily: [0, 1, 0, 1, 0, 0, 0], volume: [40, 20, 40, 60, 40, 20] },
+      { label: "Claim Instruction", color: "#9ca3af", monthly: [0, 1, 0, 1, 0, 0], daily: [0, 0, 0, 0, 0, 0, 0], volume: [0, 50, 0, 40, 0, 0] },
+      { label: "Expired", color: "#e5e7eb", monthly: [1, 2, 1, 0, 2, 1], daily: [0, 1, 0, 0, 1, 0, 0], volume: [20, 40, 20, 0, 40, 20] },
     ],
   },
 ];
@@ -78,23 +78,23 @@ const worstChannels: Channel[] = [
     label: "Standby Letter of Credit – Outward Guarantee",
     defaults: ["Issued", "Amended – Increase Amount", "Amended – Extend Expiry", "Claim Received", "Claim Paid", "Expired / Released"],
     events: [
-      { label: "Issued", color: "#ff6b00", monthly: [1284, 0, 1102, 976, 1530, 812], weekly: [310, 288, 0, 342, 401, 275, 198, 366], volume: [2_600_000, 0, 2_100_000, 1_900_000, 2_950_000, 1_400_000] },
-      { label: "Amended – Increase Amount", color: "#ffa666", monthly: [214, 0, 190, 160, 233, 98], weekly: [52, 44, 0, 61, 70, 38, 22, 49], volume: [410_000, 0, 360_000, 300_000, 450_000, 190_000] },
-      { label: "Amended – Extend Expiry", color: "#ffd3b2", monthly: [96, 0, 80, 71, 112, 40], weekly: [20, 18, 0, 25, 31, 14, 9, 22], volume: [120_000, 0, 100_000, 90_000, 140_000, 50_000] },
-      { label: "Claim Received", color: "#9ca3af", monthly: [12, 0, 9, 4, 17, 1], weekly: [3, 2, 0, 4, 5, 1, 0, 2], volume: [80_000, 0, 60_000, 30_000, 110_000, 9_000] },
-      { label: "Claim Paid", color: "#6b7280", monthly: [7, 0, 5, 3, 11, 1], weekly: [2, 1, 0, 2, 3, 1, 0, 1], volume: [50_000, 0, 40_000, 20_000, 70_000, 7_000] },
-      { label: "Expired / Released", color: "#e5e7eb", monthly: [402, 0, 377, 296, 455, 230], weekly: [98, 90, 0, 110, 121, 84, 60, 101], volume: [700_000, 0, 650_000, 520_000, 800_000, 400_000] },
+      { label: "Issued", color: "#ff6b00", monthly: [1284, 0, 1102, 976, 1530, 812], daily: [310, 288, 0, 342, 401, 275, 198], volume: [2_600_000, 0, 2_100_000, 1_900_000, 2_950_000, 1_400_000] },
+      { label: "Amended – Increase Amount", color: "#ffa666", monthly: [214, 0, 190, 160, 233, 98], daily: [52, 44, 0, 61, 70, 38, 22], volume: [410_000, 0, 360_000, 300_000, 450_000, 190_000] },
+      { label: "Amended – Extend Expiry", color: "#ffd3b2", monthly: [96, 0, 80, 71, 112, 40], daily: [20, 18, 0, 25, 31, 14, 9], volume: [120_000, 0, 100_000, 90_000, 140_000, 50_000] },
+      { label: "Claim Received", color: "#9ca3af", monthly: [12, 0, 9, 4, 17, 1], daily: [3, 2, 0, 4, 5, 1, 0], volume: [80_000, 0, 60_000, 30_000, 110_000, 9_000] },
+      { label: "Claim Paid", color: "#6b7280", monthly: [7, 0, 5, 3, 11, 1], daily: [2, 1, 0, 2, 3, 1, 0], volume: [50_000, 0, 40_000, 20_000, 70_000, 7_000] },
+      { label: "Expired / Released", color: "#e5e7eb", monthly: [402, 0, 377, 296, 455, 230], daily: [98, 90, 0, 110, 121, 84, 60], volume: [700_000, 0, 650_000, 520_000, 800_000, 400_000] },
     ],
   },
   ...channels,
 ];
 const zeroed = (list: Channel[]): Channel[] =>
-  list.map((c) => ({ ...c, events: c.events.map((e) => ({ ...e, monthly: e.monthly.map(() => 0), weekly: e.weekly.map(() => 0), volume: e.volume.map(() => 0) })) }));
+  list.map((c) => ({ ...c, events: c.events.map((e) => ({ ...e, monthly: e.monthly.map(() => 0), daily: e.daily.map(() => 0), volume: e.volume.map(() => 0) })) }));
 const singleChannel: Channel[] = [
   {
     ...channels[0],
     defaults: ["Financed"],
-    events: [{ ...channels[0].events[1], monthly: [0, 0, 0, 0, 1, 0], weekly: [0, 0, 0, 0, 1, 0, 0, 0], volume: [0, 0, 0, 0, 1, 0] }],
+    events: [{ ...channels[0].events[1], monthly: [0, 0, 0, 0, 1, 0], daily: [0, 0, 0, 0, 1, 0, 0], volume: [0, 0, 0, 0, 1, 0] }],
   },
 ];
 const channelData = (): Channel[] => {
@@ -479,7 +479,7 @@ export default function TransactionHistoryWidget({ className = "" }: { className
   const { labels, titles, unit, span } = periods[period];
   const events = channel.events.filter((e) => selectedEvents.includes(e.label));
   const series = events.map((e) => {
-    const counts = period === "Monthly" ? e.monthly : e.weekly;
+    const counts = period === "Monthly" ? e.monthly : e.daily;
     const ticket = e.volume.reduce((s, v) => s + v, 0) / Math.max(1, e.monthly.reduce((s, v) => s + v, 0));
     const values = counts.map((count, i) => {
       if (forced === "partial" && i % 2 === 1 && i < 4) return 0;
