@@ -225,7 +225,7 @@ function Select<T extends string>({
         aria-expanded={open}
         aria-label={label}
         onClick={() => onOpen(!open)}
-        className={`th-press bg-white border-solid flex gap-[8px] items-center rounded-[8px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] w-full text-left outline-none ${focusRing} ${open ? "border-2 border-[#ff8a2d] px-[11px] py-[7px]" : "border border-[#d4d4d4] px-[12px] py-[8px] hover:border-[#a3a3a3]"}`}
+        className={`th-press bg-white border-solid flex gap-[8px] items-center rounded-[8px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)] w-full text-left outline-none ${focusRing} ${open ? "border-2 border-[#ff8a2d] px-[10px] py-[6px]" : "border border-[#d4d4d4] px-[11px] py-[7px] hover:border-[#a3a3a3]"}`}
       >
         <span title={value} className="flex-1 min-w-0 truncate font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#171717] text-[14px]">{value}</span>
         <img alt="" className="block size-[18px] shrink-0" src={imgChevronDown} />
@@ -234,7 +234,7 @@ function Select<T extends string>({
         <ul
           role="listbox"
           aria-label={label}
-          className={`th-pop origin-top-left absolute left-0 top-[calc(100%+4px)] z-30 bg-white border border-[#d4d4d4] rounded-[8px] py-[8px] ${menuShadow}`}
+          className={`th-pop origin-top-left absolute left-0 top-[calc(100%+4px)] z-30 bg-white border border-[#d4d4d4] rounded-[8px] py-[7px] ${menuShadow}`}
           style={{ width: "max-content", minWidth: `max(100%, ${menuWidth}px)`, maxWidth: "min(320px, calc(100vw - 32px))" }}
         >
           {options.map((option) => (
@@ -279,7 +279,7 @@ function EventsFilter({
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => onOpen(!open)}
-        className={`th-press bg-white border border-solid drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[4px] items-center justify-center px-[12px] py-[8px] rounded-[8px] outline-none ${focusRing} ${open ? "border-[#d1d5db] shadow-[0_0_0_4px_rgba(152,162,179,0.14)]" : "border-[#d4d4d4] hover:bg-[#fafafa]"}`}
+        className={`th-press bg-white border border-solid drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[4px] items-center justify-center px-[11px] py-[7px] rounded-[8px] outline-none ${focusRing} ${open ? "border-[#d1d5db] shadow-[0_0_0_4px_rgba(152,162,179,0.14)]" : "border-[#d4d4d4] hover:bg-[#fafafa]"}`}
       >
         <img alt="" className="block size-[20px] shrink-0" src={imgFilterLines} />
         <span className="px-[2px] font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#404040] text-[14px] whitespace-nowrap">Events ({selected.length})</span>

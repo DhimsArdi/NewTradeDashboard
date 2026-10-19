@@ -342,7 +342,7 @@ function SelectField({
         aria-expanded={open}
         aria-haspopup="listbox"
         className={`bg-white border-solid cursor-pointer flex gap-[8px] items-center overflow-clip relative rounded-[8px] shrink-0 text-left w-full ${
-          open ? "border-2 border-[#ff8933] px-[13px] py-[9px]" : "border border-[#d4d4d4] px-[14px] py-[10px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]"
+          open ? "border-2 border-[#ff8933] px-[12px] py-[8px]" : "border border-[#d4d4d4] px-[13px] py-[9px] shadow-[0px_1px_2px_0px_rgba(16,24,40,0.05)]"
         }`}
         data-name="Input"
         onClick={() => onOpenChange(!open)}
@@ -356,7 +356,7 @@ function SelectField({
         rect &&
         createPortal(
           <div
-            className="bg-white border border-[#d4d4d4] border-solid fixed overflow-y-auto py-[8px] report-menu-scroll rounded-[8px] shadow-[0px_12px_16px_-4px_rgba(0,0,0,0.08),0px_4px_6px_-2px_rgba(0,0,0,0.03)] z-[1001]"
+            className="bg-white border border-[#d4d4d4] border-solid fixed overflow-y-auto py-[7px] report-menu-scroll rounded-[8px] shadow-[0px_12px_16px_-4px_rgba(0,0,0,0.08),0px_4px_6px_-2px_rgba(0,0,0,0.03)] z-[1001]"
             data-name="Dropdown List"
             ref={menuRef}
             role="listbox"
@@ -368,7 +368,7 @@ function SelectField({
                 <div className="flex items-center px-[6px] py-px w-full" key={o.value}>
                   <button
                     aria-selected={isSelected}
-                    className="cursor-pointer flex flex-[1_0_0] gap-[8px] hover:bg-[#fafafa] items-center min-w-px p-[8px] rounded-[6px] text-left"
+                    className={`cursor-pointer flex flex-[1_0_0] gap-[8px] hover:bg-[#fafafa] items-center min-w-px pl-[8px] pr-[10px] py-[10px] rounded-[6px] text-left ${isSelected ? "bg-[#fafafa]" : ""}`}
                     onClick={() => {
                       onSelect(o.value);
                       onOpenChange(false);
@@ -376,9 +376,9 @@ function SelectField({
                     role="option"
                     type="button"
                   >
-                    <span className="[word-break:break-word] flex flex-[1_0_0] flex-col gap-[2px] min-w-px not-italic py-[2px]">
-                      <span className="font-['TT_Interphases_Pro:Medium'] leading-[20px] text-[#404040] text-[14px] whitespace-nowrap">{o.label}</span>
-                      {o.sub && <span className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">{o.sub}</span>}
+                    <span className="[word-break:break-word] flex flex-[1_0_0] flex-col gap-[2px] min-w-px not-italic">
+                      <span className="font-['TT_Interphases_Pro:Medium'] leading-[24px] text-[#404040] text-[16px] whitespace-nowrap">{o.label}</span>
+                      {o.sub && <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">{o.sub}</span>}
                     </span>
                     {isSelected && <img alt="" className="block shrink-0 size-[20px]" src={imgMenuCheck} />}
                   </button>
@@ -595,11 +595,11 @@ function DownloadReportModal({ report, onClose, onDownload }: { report: ReportSu
             {period === "Monthly" ? (
               <div className="flex gap-[12px] items-center w-full" data-name="Month range">
                 <div className="flex-[1_0_0] min-w-px">
-                  <SelectField menuMaxHeight={310} menuMinWidth={240} onSelect={(v) => changeFrom(Number(v))} options={monthMenu} selected={String(fromMonth)} value={monthLabel(fromMonth)} {...menuProps("from")} />
+                  <SelectField menuMaxHeight={338} menuMinWidth={240} onSelect={(v) => changeFrom(Number(v))} options={monthMenu} selected={String(fromMonth)} value={monthLabel(fromMonth)} {...menuProps("from")} />
                 </div>
                 <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] whitespace-nowrap">to</p>
                 <div className="flex-[1_0_0] min-w-px">
-                  <SelectField menuMaxHeight={310} menuMinWidth={240} onSelect={(v) => changeTo(Number(v))} options={monthMenu} selected={String(toMonth)} value={monthLabel(toMonth)} {...menuProps("to")} />
+                  <SelectField menuMaxHeight={338} menuMinWidth={240} onSelect={(v) => changeTo(Number(v))} options={monthMenu} selected={String(toMonth)} value={monthLabel(toMonth)} {...menuProps("to")} />
                 </div>
               </div>
             ) : (

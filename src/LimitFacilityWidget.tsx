@@ -11,7 +11,7 @@ const imgRefresh = a("transaction-history/refresh.svg");
 
 // ---------- Demo data ----------
 
-// All facilities share one currency; order is fixed and reused by the dropdown and the summary.
+// All facilities share one currency; order is fixed.
 type Facility = { name: string; total: number; outstanding: number; expiry: string };
 
 const CURRENCY = "IDR";
@@ -21,6 +21,15 @@ const COLOR_AVAILABLE = "#6bc0c1";
 const baseFacilities: Facility[] = [
   { name: "Bill Purchasing Line", total: 900_000_000, outstanding: 500_000_000, expiry: "30 Dec 2026" },
   { name: "Non Cash Loan", total: 690_000_000, outstanding: 483_000_000, expiry: "31 Mar 2027" },
+];
+
+// The dropdown lists more facilities than the usage summary (Figma 381:16403): the first summary
+// facility followed by these. Non Cash Loan stays summary-only. Amounts are demo values.
+const dropdownOnlyFacilities: Facility[] = [
+  { name: "Sublimit Export", total: 300_000_000, outstanding: 120_000_000, expiry: "30 Dec 2026" },
+  { name: "Local GB Facility Line", total: 450_000_000, outstanding: 315_000_000, expiry: "31 Mar 2027" },
+  { name: "Guarantee Line", total: 250_000_000, outstanding: 50_000_000, expiry: "30 Jun 2027" },
+  { name: "Sublimit Bank Guarantee", total: 150_000_000, outstanding: 135_000_000, expiry: "31 Mar 2027" },
 ];
 
 const money = (n: number) => `${CURRENCY} ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -59,6 +68,9 @@ const ownedFacilities = (): Facility[] => {
   return list;
 };
 
+// One owned facility shows as plain text, so the extra dropdown entries only apply when there is a dropdown.
+const dropdownFacilities = (summary: Facility[]): Facility[] => (summary.length > 1 ? [summary[0], ...dropdownOnlyFacilities] : summary);
+
 // ---------- Building blocks ----------
 
 const focusRing = "focus-visible:shadow-[0_0_0_2px_white,0_0_0_4px_#099697]";
@@ -96,7 +108,7 @@ function FacilitySelect({ value, options, onChange }: { value: string; options: 
         <ul
           role="listbox"
           aria-label="Facility"
-          className="th-pop origin-top absolute left-0 right-0 top-[calc(100%+6px)] z-30 bg-white border border-[#d4d4d4] rounded-[8px] py-[8px] shadow-[0px_12px_16px_-4px_rgba(0,0,0,0.08),0px_4px_6px_-2px_rgba(0,0,0,0.03)]"
+          className="th-pop origin-top absolute left-0 right-0 top-[calc(100%+6px)] z-30 bg-white border border-[#d4d4d4] rounded-[8px] py-[7px] shadow-[0px_12px_16px_-4px_rgba(0,0,0,0.08),0px_4px_6px_-2px_rgba(0,0,0,0.03)]"
         >
           {options.map((option) => {
             const selected = option === value;
@@ -175,7 +187,7 @@ function UsageHeader({ loading }: { loading: boolean }) {
   return (
     <>
       <div className="flex flex-col gap-[12px] w-full">
-        <h3 className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">Limit usage summary</h3>
+        <h3 className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">Usage Summary</h3>
         <div className="h-px w-full bg-[#e5e5e5]" />
       </div>
       <ul aria-label="Legend" className="flex gap-[20px] items-center">
@@ -197,7 +209,8 @@ function UsageHeader({ loading }: { loading: boolean }) {
 
 export default function LimitFacilityWidget({ className = "" }: { className?: string }) {
   const [facilities] = useState(ownedFacilities);
-  const [selectedName, setSelectedName] = useState(facilities[0]?.name ?? "");
+  const [choices] = useState(() => dropdownFacilities(facilities));
+  const [selectedName, setSelectedName] = useState(choices[0]?.name ?? "");
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -213,19 +226,19 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
   // No facility: the widget is not shown at all.
   if (!facilities.length) return null;
 
-  const facility = facilities.find((f) => f.name === selectedName) ?? facilities[0];
-  const single = facilities.length === 1;
+  const facility = choices.find((f) => f.name === selectedName) ?? choices[0];
+  const single = choices.length === 1;
   // Content height with data, kept for loading/error so the card does not jump.
   const bodyHeight = single ? 428 : 491;
 
   return (
     <section
-      aria-label="Limit Facility"
+      aria-label="Facility Limit"
       className={`bg-white border border-[#e5e5e5] border-solid drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex flex-col gap-[16px] items-start p-[24px] relative rounded-[16px] ${className}`}
       data-name="Widget / Limit Facility"
     >
       <header className="flex flex-col gap-[2px] w-full">
-        <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Limit Facility</h2>
+        <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Facility Limit</h2>
         <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Select a facility to see its limit details.</p>
       </header>
 
@@ -297,7 +310,7 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
               {single ? (
                 <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#171717] text-[16px]">{facility.name}</p>
               ) : (
-                <FacilitySelect value={facility.name} options={facilities.map((f) => f.name)} onChange={setSelectedName} />
+                <FacilitySelect value={facility.name} options={choices.map((f) => f.name)} onChange={setSelectedName} />
               )}
               <div key={facility.name} className="cal-fade-in flex flex-col gap-[6px] w-full">
                 <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">Available limit</p>
