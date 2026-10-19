@@ -27,7 +27,7 @@ type Expiry = {
 
 const expiries: Expiry[] = [
   { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01236S26", counterparty: "Mitsui & Co., Ltd.", amount: "EUR 58,900.00" },
-  { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00301A25", counterparty: "PT Wijaya Karya", amount: "IDR 1,250,000,000.00" },
+  { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00301A25", counterparty: "PT Wijaya Karya", amount: "IDR 1,250,000,000.00", amendExtend: true },
   { date: new Date(2026, 7, 24), title: "Export LC expiry - ELTRG01238S26", counterparty: "Wilmar Trading Pte. Ltd.", amount: "SGD 212,000.00" },
   { date: new Date(2026, 7, 27), title: "BG expiry - IGTRG00298A25", counterparty: "PT Pertamina", amount: "IDR 2,800,980,000.00", amendExtend: true },
   { date: new Date(2026, 7, 28), title: "Export LC expiry - ELTRG01242S26", counterparty: "Cargill Asia Pacific", amount: "USD 96,800.00" },
@@ -93,7 +93,7 @@ const forcedState = () => {
 
 type DayState = "default" | "today" | "selected" | "outside";
 
-function Day({ date, state, dot, label, onSelect }: { date: Date; state: DayState; dot: string | null; label?: string; onSelect?: () => void }) {
+function Day({ date, state, dots, label, onSelect }: { date: Date; state: DayState; dots: string[]; label?: string; onSelect?: () => void }) {
   const base = "relative flex flex-[1_0_0] min-w-px h-[48px] flex-col items-center justify-center leading-[24px] text-[16px] text-center";
   const look = {
     default: "rounded-[12px] font-['TT_Interphases_Pro:Medium'] text-[#171717]",
@@ -104,7 +104,13 @@ function Day({ date, state, dot, label, onSelect }: { date: Date; state: DayStat
   const content = (
     <>
       {date.getDate()}
-      {dot && <img alt="" className={`absolute left-1/2 -translate-x-1/2 size-[8px] ${state === "selected" ? "bottom-[4px]" : "bottom-[5px]"}`} src={dot} />}
+      {dots.length > 0 && (
+        <span className={`absolute inset-x-0 flex justify-center gap-[4px] ${state === "selected" ? "bottom-[4px]" : "bottom-[5px]"}`}>
+          {dots.map((src) => (
+            <img key={src} alt="" className="block size-[8px]" src={src} />
+          ))}
+        </span>
+      )}
     </>
   );
   if (!onSelect) return <div className={`${base} ${look}`}>{content}</div>;
@@ -265,11 +271,12 @@ export default function CalendarWidget({ className = "" }: { className?: string 
   const scoped = isCurrentMonth ? monthItems.filter((e) => e.date >= TODAY) : monthItems;
   const listItems = selected ? monthItems.filter((e) => sameDay(e.date, selected)) : scoped;
 
-  const dotFor = (d: Date, state: DayState) => {
+  // One dot per kind on that day: expiry, then amend extend. On today's solid tile the first dot turns white.
+  const dotsFor = (d: Date, state: DayState) => {
     const items = monthItems.filter((e) => sameDay(e.date, d));
-    if (!items.length) return null;
-    if (state === "today") return imgDotToday;
-    return items.every((e) => e.amendExtend) ? imgDotAmend : imgDotExpiry;
+    const dots = [items.some((e) => !e.amendExtend) && imgDotExpiry, items.some((e) => e.amendExtend) && imgDotAmend].filter((x) => x !== false);
+    if (state === "today" && dots.length) dots[0] = imgDotToday;
+    return dots;
   };
 
   // Legend only names what this month actually shows; with no expiries it disappears entirely.
@@ -340,16 +347,16 @@ export default function CalendarWidget({ className = "" }: { className?: string 
                           : sameDay(d, TODAY)
                             ? "today"
                             : "default";
-                      const dot = state === "outside" ? null : dotFor(d, state);
+                      const dots = state === "outside" ? [] : dotsFor(d, state);
                       const count = monthItems.filter((e) => sameDay(e.date, d)).length;
                       return (
                         <Day
                           key={d.toISOString()}
                           date={d}
                           state={state}
-                          dot={dot}
+                          dots={dots}
                           label={`${dayLabel(d)}, ${plural(count)}`}
-                          onSelect={dot ? () => setSelected(state === "selected" ? null : d) : undefined}
+                          onSelect={dots.length ? () => setSelected(state === "selected" ? null : d) : undefined}
                         />
                       );
                     })}
