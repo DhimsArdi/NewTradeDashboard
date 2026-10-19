@@ -35,7 +35,7 @@ const expiries: Expiry[] = [
   { date: new Date(2026, 7, 31), title: "BG expiry - IGTRG00305A25", counterparty: "PT Adhi Karya", amount: "IDR 450,000,000.00" },
   { date: new Date(2026, 8, 8), title: "Export LC expiry - ELTRG01240S26", counterparty: "Itochu Corporation", amount: "USD 310,000.00" },
   { date: new Date(2026, 8, 15), title: "Limit facility expiry", counterparty: "Bill Purchasing Line", amount: "IDR 5,000,000,000.00" },
-  { date: new Date(2026, 8, 22), title: "BG expiry - IGTRG00312A25", counterparty: "PT Waskita Karya", amount: "IDR 980,000,000.00", amendExtend: true },
+  { date: new Date(2026, 8, 22), title: "BG expiry - IGTRG00312A25", counterparty: "PT Waskita Karya", amount: "IDR 980,000,000.00" },
 ];
 
 // Stress-test fixtures for the dev data toggle: long names, huge amounts, a crowded day, a 60-item month.
@@ -125,7 +125,7 @@ function ExpiryItem({ item }: { item: Expiry }) {
   const day = String(item.date.getDate()).padStart(2, "0");
   const month = item.date.toLocaleString("en-US", { month: "short" }).toUpperCase();
   return (
-    <li className="border-b border-[#f5f5f5] flex gap-[16px] min-h-[74px] items-center pl-[8px] pr-[12px] py-[14px] w-full">
+    <li className="border-b border-[#f5f5f5] flex gap-[16px] min-h-[74px] items-center pl-[8px] pr-[12px] py-[13.5px] w-full">
       <div className="bg-[#f9f9f9] flex flex-col items-center justify-center rounded-[8px] shrink-0 size-[40px] font-['TT_Interphases_Pro:Medium'] leading-[18px] text-[#171717] text-[12px] text-center">
         <span>{day}</span>
         <span>{month}</span>
@@ -272,6 +272,17 @@ export default function CalendarWidget({ className = "" }: { className?: string 
     return items.every((e) => e.amendExtend) ? imgDotAmend : imgDotExpiry;
   };
 
+  // Legend only names what this month actually shows; with no expiries it disappears entirely.
+  const legend = monthItems.length
+    ? (
+        [
+          [isCurrentMonth, "Today", COLOR_TODAY],
+          [monthItems.some((e) => !e.amendExtend), "Expiry date", COLOR_EXPIRY],
+          [monthItems.some((e) => e.amendExtend), "Amend extend (new expiry date)", COLOR_AMEND],
+        ] as const
+      ).filter(([show]) => show)
+    : [];
+
   const listTitle = selected ? `Expiries on ${dayLabel(selected)}` : isCurrentMonth ? "Upcoming expiries" : `Expiries in ${monthLabel(month)}`;
   const showEmpty = status === "empty" || (ready && listItems.length === 0);
 
@@ -347,18 +358,16 @@ export default function CalendarWidget({ className = "" }: { className?: string 
             </div>
           </div>
 
-          <ul aria-label="Legend" className="flex flex-wrap gap-[4px_16px] items-center">
-            {[
-              ["Today", COLOR_TODAY],
-              ["Expiry date", COLOR_EXPIRY],
-              ["Amend extend (new expiry date)", COLOR_AMEND],
-            ].map(([label, color]) => (
-              <li key={label} className="flex gap-[4px] items-center">
-                <span className="rounded-[3.333px] shrink-0 size-[10px]" style={{ background: color }} />
-                <span className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px] whitespace-nowrap">{label}</span>
-              </li>
-            ))}
-          </ul>
+          {legend.length > 0 && (
+            <ul aria-label="Legend" className="cal-fade-in flex flex-wrap gap-[4px_16px] items-center">
+              {legend.map(([, label, color]) => (
+                <li key={label} className="flex gap-[4px] items-center">
+                  <span className="rounded-[3.333px] shrink-0 size-[10px]" style={{ background: color }} />
+                  <span className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px] whitespace-nowrap">{label}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="flex flex-col gap-[8px] w-full">
