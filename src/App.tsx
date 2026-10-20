@@ -4,6 +4,7 @@ import TransactionHistoryWidget from "./TransactionHistoryWidget";
 import ReportOverviewWidget from "./ReportOverviewWidget";
 import CalendarWidget from "./CalendarWidget";
 import LimitFacilityWidget from "./LimitFacilityWidget";
+import TransactionOverviewWidget from "./TransactionOverviewWidget";
 import { DevDataToggle, useDataset } from "./devData";
 
 const assetPathPrefix = "/assets";
@@ -29,9 +30,6 @@ const imgChartBreakoutCircle = `${assetPathPrefix}/625b8.svg`;
 const imgBank = `${assetPathPrefix}/cf740.svg`;
 const imgArrowCircleBrokenUpRight = `${assetPathPrefix}/7c7ea.svg`;
 const imgContainer1 = `${assetPathPrefix}/62582.svg`;
-const imgAlertCircle = `${assetPathPrefix}/9dcb1.svg`;
-const imgArrowRight = `${assetPathPrefix}/9d328.svg`;
-const imgClock1 = `${assetPathPrefix}/ea938.svg`;
 const imgChevronRight1 = `${assetPathPrefix}/bc2d8.svg`;
 
 const NAV_EXPANDED = 336;
@@ -106,60 +104,7 @@ export default function TradeDashboardMaster() {
                   <ReportOverviewWidget key={`report-${dataset}`} className="shrink-0 w-full" />
                 </div>
                 <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-center min-w-px relative w-full" data-node-id="2:20089" data-name="Right-Column">
-                  <div className="content-stretch flex gap-[24px] items-stretch relative shrink-0 w-full" data-node-id="2:20090">
-                    <div className="bg-white border border-[#e5e5e5] border-solid content-stretch flex flex-[1_0_0] flex-col gap-[12px] items-start min-w-px overflow-clip p-[20px] relative rounded-[16px]" data-node-id="2:20091" data-name="Transaction Overview / Need your action">
-                      <div className="bg-white content-stretch flex gap-[8px] items-center overflow-clip relative shrink-0 w-full" data-node-id="I2:20091;2:19311" data-name="Top">
-                        <div className="bg-[#fee4e2] relative rounded-[20px] shrink-0 size-[32px]" data-node-id="I2:20091;2:19312" data-name="Featured icon">
-                          <div className="-translate-x-1/2 -translate-y-1/2 absolute left-1/2 size-[19.2px] top-1/2" data-node-id="I2:20091;2:19312;65:260" data-name="alert-circle">
-                            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgAlertCircle} />
-                          </div>
-                        </div>
-                        <p className="[word-break:break-word] flex-[1_0_0] font-['TT_Interphases_Pro:Medium'] leading-[24px] min-w-px not-italic relative text-[#404040] text-[16px]" data-node-id="I2:20091;2:19313">
-                          Need your action
-                        </p>
-                      </div>
-                      <p className="[word-break:break-word] font-['TT_Interphases_Pro:Bold'] leading-[1.2] not-italic relative shrink-0 text-[#171717] text-[24px] whitespace-nowrap" data-node-id="I2:20091;2:19314">
-                        4
-                      </p>
-                      <p className="[word-break:break-word] font-['TT_Interphases_Pro:Regular'] min-h-[40px] leading-[20px] min-w-full not-italic relative shrink-0 text-[#525252] text-[14px] w-[min-content]" data-node-id="I2:20091;2:19315">
-                        Partially rejected or returned by the bank.
-                      </p>
-                      <div className="content-stretch drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[6px] items-center justify-center relative rounded-[9999px] shrink-0" data-node-id="I2:20091;2:19316" data-name="Buttons">
-                        <p className="[word-break:break-word] font-['TT_Interphases_Pro:DemiBold'] leading-[20px] not-italic relative shrink-0 text-[#ff6b00] text-[14px] whitespace-nowrap" data-node-id="I2:20091;2:19316;189:9163">
-                          View tasks
-                        </p>
-                        <div className="relative shrink-0 size-[20px]" data-node-id="I2:20091;2:19316;189:9164" data-name="placeholder">
-                          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgArrowRight} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white border border-[#e5e5e5] border-solid content-stretch flex flex-[1_0_0] flex-col gap-[12px] items-start min-w-px overflow-clip p-[20px] relative rounded-[16px]" data-node-id="2:20092" data-name="Transaction Overview / In progress">
-                      <div className="bg-white content-stretch flex gap-[8px] items-center overflow-clip relative shrink-0 w-full" data-node-id="I2:20092;2:19318" data-name="Top">
-                        <div className="bg-[#fef0c7] relative rounded-[20px] shrink-0 size-[32px]" data-node-id="I2:20092;2:19319" data-name="Featured icon">
-                          <div className="-translate-x-1/2 -translate-y-1/2 absolute left-1/2 size-[15.36px] top-1/2" data-node-id="I2:20092;2:19319;65:266" data-name="alert-triangle">
-                            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgClock1} />
-                          </div>
-                        </div>
-                        <p className="[word-break:break-word] flex-[1_0_0] font-['TT_Interphases_Pro:Medium'] leading-[24px] min-w-px not-italic relative text-[#404040] text-[16px]" data-node-id="I2:20092;2:19320">
-                          In progress
-                        </p>
-                      </div>
-                      <p className="[word-break:break-word] font-['TT_Interphases_Pro:Bold'] leading-[1.2] not-italic relative shrink-0 text-[#171717] text-[24px] whitespace-nowrap" data-node-id="I2:20092;2:19321">
-                        6
-                      </p>
-                      <p className="[word-break:break-word] font-['TT_Interphases_Pro:Regular'] min-h-[40px] leading-[20px] min-w-full not-italic relative shrink-0 text-[#525252] text-[14px] w-[min-content]" data-node-id="I2:20092;2:19322">
-                        Waiting for approval or processed by the bank.
-                      </p>
-                      <div className="content-stretch drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[6px] items-center justify-center relative rounded-[9999px] shrink-0" data-node-id="I2:20092;2:19323" data-name="Buttons">
-                        <p className="[word-break:break-word] font-['TT_Interphases_Pro:DemiBold'] leading-[20px] not-italic relative shrink-0 text-[#ff6b00] text-[14px] whitespace-nowrap" data-node-id="I2:20092;2:19323;189:9163">
-                          View details
-                        </p>
-                        <div className="relative shrink-0 size-[20px]" data-node-id="I2:20092;2:19323;189:9164" data-name="placeholder">
-                          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgArrowRight} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <TransactionOverviewWidget key={`overview-${dataset}`} className="shrink-0 w-full" />
                   <CalendarWidget key={`calendar-${dataset}`} className="shrink-0 w-full" />
                   <div className="bg-white border border-[#e5e5e5] border-solid content-stretch flex flex-col gap-[16px] items-center overflow-clip p-[24px] relative rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] shrink-0 w-full" data-node-id="2:20198" data-name="Widget / Quick Access (input PO)">
                     <div className="content-stretch flex flex-col gap-[20px] isolate items-start relative shrink-0 w-full" data-node-id="2:20199" data-name="Section header">

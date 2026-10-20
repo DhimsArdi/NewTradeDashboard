@@ -31,23 +31,23 @@ const expiries: Expiry[] = [
   { date: new Date(2026, 7, 24), title: "Export LC expiry - ELTRG01238S26", counterparty: "Wilmar Trading Pte. Ltd.", amount: "SGD 212,000.00" },
   { date: new Date(2026, 7, 27), title: "BG expiry - IGTRG00298A25", counterparty: "PT Pertamina", amount: "IDR 2,800,980,000.00", amendExtend: true },
   { date: new Date(2026, 7, 28), title: "Export LC expiry - ELTRG01242S26", counterparty: "Cargill Asia Pacific", amount: "USD 96,800.00" },
-  { date: new Date(2026, 7, 31), title: "Limit facility expiry", counterparty: "Bank Guarantee Limit", amount: "IDR 690,000,000.00" },
+  { date: new Date(2026, 7, 31), title: "Facility limit expiry", counterparty: "Bank Guarantee Limit", amount: "IDR 690,000,000.00" },
   { date: new Date(2026, 7, 31), title: "BG expiry - IGTRG00305A25", counterparty: "PT Adhi Karya", amount: "IDR 450,000,000.00" },
   { date: new Date(2026, 8, 8), title: "Export LC expiry - ELTRG01240S26", counterparty: "Itochu Corporation", amount: "USD 310,000.00" },
-  { date: new Date(2026, 8, 15), title: "Limit facility expiry", counterparty: "Bill Purchasing Line", amount: "IDR 5,000,000,000.00" },
+  { date: new Date(2026, 8, 15), title: "Facility limit expiry", counterparty: "Bill Purchasing Line", amount: "IDR 5,000,000,000.00" },
   { date: new Date(2026, 8, 22), title: "BG expiry - IGTRG00312A25", counterparty: "PT Waskita Karya", amount: "IDR 980,000,000.00" },
 ];
 
 // Stress-test fixtures for the dev data toggle: long names, huge amounts, a crowded day, a 60-item month.
 const worstExpiries: Expiry[] = [
   { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01236S26-AMD03", counterparty: "PT Perusahaan Perdagangan Internasional Nusantara Sejahtera Tbk", amount: "IDR 12,500,000,000,000.00" },
-  { date: new Date(2026, 7, 20), title: "Limit facility expiry", counterparty: "Standby Letter of Credit Facility – Syndicated (Tranche B)", amount: "USD 1,250,000,000.00", amendExtend: true },
+  { date: new Date(2026, 7, 20), title: "Facility limit expiry", counterparty: "Standby Letter of Credit Facility – Syndicated (Tranche B)", amount: "USD 1,250,000,000.00", amendExtend: true },
   { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00301A25", counterparty: "Jo", amount: "IDR 0.00" },
   { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01237S26", counterparty: "Đặng Thị Ngọc Hân Trading Co., Ltd.", amount: "VND 25,000,000,000.00" },
   { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00302A25", counterparty: "Mitsubishi UFJ Trust and Banking Corporation, Singapore Branch", amount: "JPY 1,234,567,890,123.00", amendExtend: true },
   { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01239S26", counterparty: "王秀英贸易有限公司", amount: "CNY 88,000.00" },
   { date: new Date(2026, 7, 27), title: "BG expiry - IGTRG00298A25", counterparty: "PT Pertamina (Persero)", amount: "IDR 2,800,980,000.00", amendExtend: true },
-  { date: new Date(2026, 7, 31), title: "Limit facility expiry", counterparty: "Bank Guarantee Limit", amount: "IDR 690,000,000.00" },
+  { date: new Date(2026, 7, 31), title: "Facility limit expiry", counterparty: "Bank Guarantee Limit", amount: "IDR 690,000,000.00" },
   ...Array.from({ length: 60 }, (_, i) => ({
     date: new Date(2026, 8, 1 + (i % 30)),
     title: `Export LC expiry - ELTRG0${1300 + i}S26`,
@@ -143,7 +143,7 @@ function ExpiryItem({ item }: { item: Expiry }) {
             <p title={item.title} className="min-w-0 max-w-full font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#0e0e0e] text-[16px] truncate">{item.title}</p>
             {item.amendExtend && (
               <span className="bg-[#eff6ff] border border-[#bfdbfe] flex h-[22px] items-center px-[8px] rounded-[16px] shrink-0 font-['TT_Interphases_Pro:DemiBold'] leading-[1.2] text-[#1d4ed8] text-[12px] whitespace-nowrap">
-                Amend Extend
+                Amendment Extension
               </span>
             )}
           </div>
@@ -285,7 +285,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
         [
           [isCurrentMonth, "Today", COLOR_TODAY],
           [monthItems.some((e) => !e.amendExtend), "Expiry date", COLOR_EXPIRY],
-          [monthItems.some((e) => e.amendExtend), "Amend extend (new expiry date)", COLOR_AMEND],
+          [monthItems.some((e) => e.amendExtend), "Amendment: expiry date extension", COLOR_AMEND],
         ] as const
       ).filter(([show]) => show)
     : [];
@@ -302,7 +302,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
       <header className="flex flex-col gap-[12px] w-full">
         <div className="flex flex-col gap-[2px]">
           <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Calendar</h2>
-          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Expiry dates of your products and limit facilities.</p>
+          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Shows the expiry dates of your transactions and facility limits.</p>
         </div>
         <div className="h-px w-full bg-[#e5e5e5]" />
       </header>
@@ -386,7 +386,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
                 onClick={() => setSelected(null)}
                 className="th-press rounded-[4px] font-['TT_Interphases_Pro:DemiBold'] text-[#ef4f00] outline-none hover:underline focus-visible:shadow-[0_0_0_2px_white,0_0_0_4px_#099697]"
               >
-                Show all
+                Show All
               </button>
             ) : (
               ready && listItems.length > 0 && <p className="font-['TT_Interphases_Pro:Regular'] text-[#525252]">{plural(listItems.length)}</p>
@@ -417,9 +417,9 @@ export default function CalendarWidget({ className = "" }: { className?: string 
             ) : showEmpty ? (
               <div className="cal-fade-in bg-[#fafafa] flex h-full flex-col gap-[8px] items-center justify-center p-[16px] rounded-[12px] text-center">
                 <img alt="" className="block h-[80.8px] w-[130.8px]" src={imgEmpty} />
-                <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">No expiries this month</p>
+                <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">No expiries in this month</p>
                 <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] max-w-[340px]">
-                  Expiry dates of your products and limit facilities will appear here.
+                  Expiry dates of your transactions and facility limits will appear here.
                 </p>
               </div>
             ) : (

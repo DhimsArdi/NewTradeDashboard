@@ -105,7 +105,7 @@ const channelData = (): Channel[] => {
   return channels;
 };
 
-const showByOptions = ["Transactions", "Volume"] as const;
+const showByOptions = ["Items", "Volume"] as const;
 type ShowBy = (typeof showByOptions)[number];
 
 // Amounts are per transaction currency (not converted); scale turns the USD demo series into native-currency amounts.
@@ -416,10 +416,10 @@ function StateBody({ kind, span, onRetry }: { kind: "empty" | "error"; span: str
         )}
         <div className="flex flex-col gap-[4px] items-center w-full" role={isError ? "alert" : undefined}>
           <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">
-            {isError ? "Transaction History data is unavailable" : "No transactions yet"}
+            {isError ? "Transaction history data is unavailable" : "No transactions yet"}
           </p>
           <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">
-            {isError ? "We couldn't load this data right now. Please try again." : `Completed transactions from the ${span} will appear here.`}
+            {isError ? "We couldn't load this data right now. Please try again." : `Your transactions in the ${span} will appear here.`}
           </p>
         </div>
         {isError && (
@@ -445,7 +445,7 @@ export default function TransactionHistoryWidget({ className = "" }: { className
   const [channelLabel, setChannelLabel] = useState(owned[0].label);
   const [selectedEvents, setSelectedEvents] = useState<string[]>(owned[0].defaults);
   const [period, setPeriod] = useState<Period>("Monthly");
-  const [showBy, setShowBy] = useState<ShowBy>("Transactions");
+  const [showBy, setShowBy] = useState<ShowBy>("Items");
   const [currency, setCurrency] = useState<Currency>(currencies[0]);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
@@ -504,12 +504,12 @@ export default function TransactionHistoryWidget({ className = "" }: { className
   }, [hasChart]);
   const ticks = Array.from({ length: AXIS_STEPS + 1 }, (_, i) => (top / AXIS_STEPS) * (AXIS_STEPS - i));
   const fmt = (v: number) => (isVolume ? money(v, currency) : v.toLocaleString("en-US"));
-  const fmtTotal = (v: number) => (v === 0 ? "No transactions" : isVolume ? money(v, currency) : `${v.toLocaleString("en-US")} transaction${v === 1 ? "" : "s"}`);
+  const fmtTotal = (v: number) => (v === 0 ? "No transactions" : isVolume ? money(v, currency) : `${v.toLocaleString("en-US")} item${v === 1 ? "" : "s"}`);
 
   const singleChannel = owned.length === 1;
   const subtitle = singleChannel
-    ? `${channel.label} · ${isVolume ? "volume " : ""}per ${unit} · ${span}`
-    : `${isVolume ? "Volume" : "Completed"} per ${unit} · ${span}`;
+    ? `${channel.label} · ${isVolume ? `volume per ${unit} · ` : ""}${span}`
+    : `${isVolume ? "Volume" : "Activity"} per ${unit} · ${span}`;
 
   const menu = (id: string) => ({ open: openMenu === id, onOpen: (o: boolean) => setOpenMenu(o ? id : null) });
   const n = labels.length;
