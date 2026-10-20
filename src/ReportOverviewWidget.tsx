@@ -20,6 +20,7 @@ const imgMenuCheck = a("menuCheck.svg");
 const imgCheckboxCheck = a("checkboxCheck.svg");
 const imgMinus = a("minus.svg");
 const imgToastCheck = a("toastCheck.svg");
+const imgToastSpinner = a("toastSpinner.svg");
 const imgToastAlert = a("toastAlert.svg");
 
 type ReportId = "transaction-history" | "limit-facility";
@@ -96,8 +97,8 @@ const reportName = (r: DownloadRequest) =>
   r.product ? `${r.product} ${r.report.title}` : r.report.title;
 
 const defaultReports: ReportSummary[] = [
-  { id: "transaction-history", title: "Transaction History", description: "Monthly, by event and product.", hasData: true },
-  { id: "limit-facility", title: "Limit Facility", description: "Limit and usage per facility.", hasData: true },
+  { id: "transaction-history", title: "Transaction History", description: "Bank Guarantee and LC transactions.", hasData: true },
+  { id: "limit-facility", title: "Facility Limit", description: "Limit and usage of your facilities.", hasData: true },
 ];
 
 // Stress-test fixture for the dev data toggle: descriptions as long as the API may send.
@@ -108,7 +109,7 @@ const worstReports: ReportSummary[] = [
     description: "Monthly completed transactions by event and product, including amendments, claims and released guarantees across all channels.",
     hasData: true,
   },
-  { id: "limit-facility", title: "Limit Facility", description: "Limit, outstanding and availability per facility, including syndicated and over-limit facilities.", hasData: false },
+  { id: "limit-facility", title: "Facility Limit", description: "Limit, outstanding and availability per facility, including syndicated and over-limit facilities.", hasData: false },
 ];
 
 type Status = "loading" | "ready" | "error";
@@ -123,7 +124,7 @@ function fetchReportOverview(): Promise<ReportSummary[]> {
       const forced = forcedState();
       if (forced === "error") return reject(new Error("unavailable"));
       if (forced === "empty")
-        return resolve(defaultReports.map((r) => (r.id === "transaction-history" ? { ...r, hasData: false, description: "No transactions to report yet." } : r)));
+        return resolve(defaultReports.map((r) => (r.id === "transaction-history" ? { ...r, hasData: false, description: "No transactions yet." } : r)));
       if (forced === "single") return resolve(defaultReports.filter((r) => r.id === "transaction-history"));
       const dataset = currentDataset();
       if (dataset === "worst") return resolve(worstReports);
@@ -182,7 +183,7 @@ function SectionHeader() {
     <div className="[word-break:break-word] content-stretch flex flex-col gap-[2px] items-start not-italic relative shrink-0 w-full" data-name="Section header">
       <p className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] relative shrink-0 text-[#171717] text-[18px] w-full">Report Overview</p>
       <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] relative shrink-0 text-[#525252] text-[14px] w-full">
-        Download a report with the default information, or choose your own.
+        Download reports of your transactions and facility limits.
       </p>
     </div>
   );
@@ -260,7 +261,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
           </div>
         </div>
         <div className="[word-break:break-word] flex flex-col gap-[4px] items-center not-italic text-center w-full">
-          <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px] whitespace-nowrap">Report Overview is unavailable</p>
+          <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px] whitespace-nowrap">Report overview is unavailable</p>
           <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] w-full">{`We couldn't load this data right now. Please try again.`}</p>
         </div>
         <button
@@ -652,32 +653,42 @@ function DownloadReportModal({ report, onClose, onDownload }: { report: ReportSu
   );
 }
 
-type Toast = { id: number; kind: "success" | "error"; message: string; retry?: DownloadRequest };
+// "preparing" shows from the moment the modal's Download is clicked until the file is ready.
+type Toast = { id: number; kind: "preparing" | "success" | "error"; message: string };
 
-function ReportToast({ toast, onRetry, onDismiss }: { toast: Toast; onRetry: (r: DownloadRequest) => void; onDismiss: () => void }) {
+const toastBg: Record<Toast["kind"], string> = { preparing: "bg-[#1f2937]", success: "bg-[#16a34a]", error: "bg-[#dc2626]" };
+
+function ReportToast({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
   const isError = toast.kind === "error";
   return createPortal(
     <div className="-translate-x-1/2 fixed left-1/2 max-w-[calc(100vw-32px)] report-toast-in top-[90px] w-[560px] z-[1002]" key={toast.id}>
       <div
         aria-live={isError ? "assertive" : "polite"}
-        className={`flex gap-[8px] items-center pl-[12px] pr-[24px] py-[12px] rounded-[8px] w-full ${isError ? "bg-[#dc2626]" : "bg-[#16a34a]"}`}
+        className={`flex gap-[8px] items-center pl-[12px] pr-[24px] py-[12px] rounded-[8px] w-full ${toastBg[toast.kind]}`}
         data-name="Toast"
         onClick={onDismiss}
         role={isError ? "alert" : "status"}
       >
-        <img alt="" className="block shrink-0 size-[24px]" src={isError ? imgToastAlert : imgToastCheck} />
+        {toast.kind === "preparing" ? (
+          // The arc's circle sits at (11.25, 11.25) in the SVG, so it spins around that point.
+          <span className="relative shrink-0 size-[24px]">
+            <img alt="" className="absolute animate-spin block left-[-1.25px] max-w-none origin-[11.25px_11.25px] size-[25.25px] top-[-1.25px]" src={imgToastSpinner} />
+          </span>
+        ) : (
+          <img alt="" className="block shrink-0 size-[24px]" src={isError ? imgToastAlert : imgToastCheck} />
+        )}
         <div className="flex flex-[1_0_0] gap-[32px] items-center min-w-px">
           <p className="[word-break:break-word] flex-[1_0_0] font-['TT_Interphases_Pro:Regular'] leading-[20px] min-w-px text-[14px] text-white">{toast.message}</p>
-          {isError && toast.retry && (
+          {isError && (
             <button
               className="cursor-pointer font-['TT_Interphases_Pro:DemiBold'] hover:underline leading-[20px] shrink-0 text-[14px] text-white whitespace-nowrap"
               onClick={(e) => {
                 e.stopPropagation();
-                onRetry(toast.retry!);
+                onDismiss();
               }}
               type="button"
             >
-              Try again
+              Okay
             </button>
           )}
         </div>
@@ -710,7 +721,7 @@ export default function ReportOverviewWidget({ className = "" }: { className?: s
   }, [load]);
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || toast.kind === "preparing") return;
     const t = window.setTimeout(() => setToast(null), toast.kind === "error" ? 8000 : 5000);
     return () => window.clearTimeout(t);
   }, [toast]);
@@ -726,12 +737,15 @@ export default function ReportOverviewWidget({ className = "" }: { className?: s
 
   const download = (request: DownloadRequest) => {
     setModalReport(null);
-    setToast(null);
     setPreparing((p) => ({ ...p, [request.report.id]: true }));
     const fmt = formats.find((f) => f.value === request.format)?.short ?? request.format;
+    const details = `(${fmt}, ${request.periodLabel})`;
+    // The result reuses the preparing toast's id so it swaps in place instead of sliding in again.
+    const id = Date.now();
+    setToast({ id, kind: "preparing", message: `Downloading ${reportName(request)} report ${details}.` });
     prepareReportFile(request)
-      .then(() => setToast({ id: Date.now(), kind: "success", message: `${reportName(request)} report downloaded (${fmt}, ${request.periodLabel}).` }))
-      .catch(() => setToast({ id: Date.now(), kind: "error", message: `Couldn't download the ${reportName(request)} report. Please try again.`, retry: request }))
+      .then(() => setToast({ id, kind: "success", message: `${reportName(request)} report downloaded ${details}.` }))
+      .catch(() => setToast({ id, kind: "error", message: `Failed to download the ${reportName(request)} report. Please try again later.` }))
       .finally(() => setPreparing((p) => ({ ...p, [request.report.id]: false })));
   };
 
@@ -752,7 +766,7 @@ export default function ReportOverviewWidget({ className = "" }: { className?: s
         </div>
       )}
       {modalReport && <DownloadReportModal key={modalReport.id} onClose={() => setModalReport(null)} onDownload={download} report={modalReport} />}
-      {toast && <ReportToast onDismiss={() => setToast(null)} onRetry={download} toast={toast} />}
+      {toast && <ReportToast onDismiss={() => setToast(null)} toast={toast} />}
     </div>
   );
 }
