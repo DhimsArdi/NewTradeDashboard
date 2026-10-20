@@ -366,11 +366,11 @@ export default function CalendarWidget({ className = "" }: { className?: string 
           </div>
 
           {legend.length > 0 && (
-            <ul aria-label="Legend" className="cal-fade-in flex flex-wrap gap-[4px_16px] items-center">
+            <ul aria-label="Legend" className="cal-fade-in flex flex-wrap gap-[4px_12px] items-center">
               {legend.map(([, label, color]) => (
-                <li key={label} className="flex gap-[4px] items-center">
-                  <span className="rounded-[3.333px] shrink-0 size-[10px]" style={{ background: color }} />
-                  <span className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px] whitespace-nowrap">{label}</span>
+                <li key={label} className="flex gap-[6px] items-center">
+                  <span className="rounded-full shrink-0 size-[10px] shadow-[inset_0_0_0_0.625px_rgba(0,0,0,0.1)]" style={{ background: color }} />
+                  <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] whitespace-nowrap">{label}</span>
                 </li>
               ))}
             </ul>

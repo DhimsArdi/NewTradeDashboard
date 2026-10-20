@@ -691,8 +691,8 @@ export default function TransactionHistoryWidget({ className = "" }: { className
           ) : (
             <ul aria-label="Legend" className="flex flex-wrap gap-[4px_12px] items-start">
               {series.map((s) => (
-                <li key={s.label} className="flex gap-[8px] items-center">
-                  <span className="rounded-full size-[8px] shrink-0" style={{ background: s.color }} />
+                <li key={s.label} className="flex gap-[6px] items-center">
+                  <span className="rounded-full size-[10px] shrink-0 shadow-[inset_0_0_0_0.625px_rgba(0,0,0,0.1)]" style={{ background: s.color }} />
                   <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] whitespace-nowrap">{s.label}</span>
                 </li>
               ))}
