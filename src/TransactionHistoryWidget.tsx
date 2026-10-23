@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { currentDataset } from "./devData";
+import { WidgetCard, WidgetFooter, useRefresh } from "./WidgetShell";
+import { MASK, useAmountsHidden } from "./amountVisibility";
+import { TODAY } from "./demoClock";
 
 const a = (file: string) => `/assets/transaction-history/${file}`;
 const imgChevronDown = a("chevronDown.svg");
@@ -9,7 +12,6 @@ const imgMenuCheck = a("menuCheck.svg");
 const imgCheckboxCheck = a("checkboxCheck.svg");
 const imgSearch = a("search.svg");
 const imgXClose = a("xClose.svg");
-const imgClock = a("clock.svg");
 const imgInfo = a("infoCircle.svg");
 const imgAlert = a("alertCircle.svg");
 const imgRefresh = a("refresh.svg");
@@ -18,12 +20,13 @@ const imgRefresh = a("refresh.svg");
 
 type Period = "Weekly" | "Monthly";
 
-const months = ["Mar", "Apr", "May", "Jun", "Jul", "Aug"];
-const monthNames = ["March", "April", "May", "June", "July", "August"];
+// Monthly is the last 6 months up to the current one.
+const lastMonths = Array.from({ length: 6 }, (_, i) => new Date(TODAY.getFullYear(), TODAY.getMonth() - 5 + i, 1));
+const months = lastMonths.map((d) => d.toLocaleString("en-US", { month: "short" }));
+const monthTitles = lastMonths.map((d) => d.toLocaleString("en-US", { month: "long", year: "numeric" }));
 
-// Weekly is per day over the last 7 business days up to today (Tue 18 Aug 2026). Weekends are skipped;
-// holidays such as 17 Aug stay as empty days.
-const TODAY = new Date(2026, 7, 18);
+// Weekly is per day over the last 7 business days up to today. Weekends are skipped; days with no activity
+// (such as holidays) stay as empty bars.
 const businessDays: Date[] = [];
 for (const d = new Date(TODAY); businessDays.length < 7; d.setDate(d.getDate() - 1)) {
   if (d.getDay() !== 0 && d.getDay() !== 6) businessDays.unshift(new Date(d));
@@ -33,7 +36,7 @@ const dayLabel = (d: Date) => (d.getTime() === TODAY.getTime() ? "Today" : `${we
 const dayTitle = (d: Date) => `${weekday(d)}, ${d.getDate()} ${d.toLocaleString("en-US", { month: "short" })} ${d.getFullYear()}`;
 
 const periods: Record<Period, { labels: string[]; titles: string[]; unit: string; span: string }> = {
-  Monthly: { labels: months, titles: monthNames.map((m) => `${m} 2026`), unit: "month", span: "last 6 months" },
+  Monthly: { labels: months, titles: monthTitles, unit: "month", span: "last 6 months" },
   Weekly: { labels: businessDays.map(dayLabel), titles: businessDays.map(dayTitle), unit: "day", span: "last 7 business days" },
 };
 
@@ -125,7 +128,7 @@ const MIN_SEGMENT = 3;
 const TOOLTIP_W = 320;
 const TOOLTIP_MIN_W = 240;
 const TOOLTIP_OFFSET = 24; // half a bar + 12px gap
-const TOOLTIP_EDGE = 20; // may extend into the widget padding, 4px short of its border
+const TOOLTIP_EDGE = 16; // may extend into the widget padding, 4px short of its border
 const skeletonHeights = [90, 120, 100, 150, 130, 170, 70, 110];
 
 // Smallest "nice" axis maximum strictly above the data maximum.
@@ -451,6 +454,7 @@ export default function TransactionHistoryWidget({ className = "" }: { className
   const [hovered, setHovered] = useState<number | null>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
+  const { refreshing, refresh, updatedAt } = useRefresh();
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartWidth, setChartWidth] = useState(0);
   const forced = forcedState();
@@ -503,8 +507,11 @@ export default function TransactionHistoryWidget({ className = "" }: { className
     return () => ro.disconnect();
   }, [hasChart]);
   const ticks = Array.from({ length: AXIS_STEPS + 1 }, (_, i) => (top / AXIS_STEPS) * (AXIS_STEPS - i));
-  const fmt = (v: number) => (isVolume ? money(v, currency) : v.toLocaleString("en-US"));
-  const fmtTotal = (v: number) => (v === 0 ? "No transactions" : isVolume ? money(v, currency) : `${v.toLocaleString("en-US")} item${v === 1 ? "" : "s"}`);
+  // Hide Amount masks volumes (tooltip values and the amount axis); item counts aren't amounts and stay.
+  const amountsHidden = useAmountsHidden() && isVolume;
+  const fmtAmount = (v: number) => (amountsHidden ? `${currency} ${MASK}` : money(v, currency));
+  const fmt = (v: number) => (isVolume ? fmtAmount(v) : v.toLocaleString("en-US"));
+  const fmtTotal = (v: number) => (v === 0 ? "No transactions" : isVolume ? fmtAmount(v) : `${v.toLocaleString("en-US")} item${v === 1 ? "" : "s"}`);
 
   const singleChannel = owned.length === 1;
   const subtitle = singleChannel
@@ -532,179 +539,177 @@ export default function TransactionHistoryWidget({ className = "" }: { className
   };
 
   return (
-    <section
-      aria-label="Transaction History"
-      className={`bg-white border border-[#e5e5e5] border-solid flex flex-col gap-[20px] items-start p-[24px] relative rounded-[16px] ${className}`}
-      data-name="Widget / Transaction History"
+    <WidgetCard
+      title="Transaction History"
+      info="Shows how many transactions were completed in each period, by product and event."
+      className={className}
+      dataName="Widget / Transaction History"
     >
-      <header className="flex flex-wrap gap-[12px_16px] items-start w-full">
-        <div className="flex flex-[1_1_200px] min-w-0 flex-col gap-[2px] justify-center self-stretch">
-          <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Transaction History</h2>
-          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">{subtitle}</p>
-        </div>
-        <div role="group" aria-label="Period" className="bg-[#fafafa] border border-[#e5e5e5] flex gap-[2px] items-center rounded-[8px] shrink-0">
-          {(["Weekly", "Monthly"] as const).map((p) => {
-            const active = p === period;
-            return (
-              <button
-                key={p}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setPeriod(p)}
-                className={`th-press flex h-[36px] items-center justify-center px-[12px] py-[8px] rounded-[8px] border outline-none font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[14px] whitespace-nowrap ${focusRing} ${active ? "bg-white border-[#d4d4d4] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] text-[#404040]" : "border-transparent text-[#737373] hover:text-[#404040]"}`}
-              >
-                {p}
-              </button>
-            );
-          })}
-        </div>
-      </header>
-
-      <div className="flex flex-col gap-[16px] w-full">
-        <div className="flex flex-wrap gap-[8px] items-start w-full">
-          {!singleChannel && (
-            <Select
-              label="Product"
-              className="flex-[1_1_0] min-w-[140px]"
-              menuWidth={200}
-              value={channel.label}
-              options={owned.map((c) => c.label)}
-              onChange={changeChannel}
-              {...menu("product")}
-            />
-          )}
-          <Select
-            label="Show by"
-            className={singleChannel ? "flex-[1_1_0] min-w-[140px]" : "flex-[0_1_150px] min-w-[130px]"}
-            menuWidth={160}
-            value={showBy}
-            options={showByOptions}
-            onChange={setShowBy}
-            {...menu("showBy")}
-          />
-          <EventsFilter channel={channel} selected={selectedEvents} onToggle={toggleEvent} {...menu("events")} />
-        </div>
-        {isVolume && (
-          <div className="flex gap-[4px] items-center">
-            <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Amount in</p>
-            {currencies.length > 1 ? (
-              <CurrencyPicker value={currency} options={currencies} onChange={setCurrency} {...menu("currency")} />
-            ) : (
-              <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#404040] text-[14px]">{currency}</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {!hasChart ? (
-        <StateBody kind={status === "error" ? "error" : "empty"} span={span} onRetry={() => setReloadKey((k) => k + 1)} />
-      ) : (
-        <>
-          <div ref={chartRef} className="relative h-[220px] w-full" aria-busy={loading} onMouseLeave={() => setHovered(null)}>
-            {ticks.map((t, i) => {
-              const y = PLOT_TOP + (PLOT_HEIGHT / AXIS_STEPS) * i;
+      <div className="flex flex-col gap-[16px] p-[20px] w-full">
+        <div className="flex flex-wrap gap-[12px_16px] items-center w-full" data-name="Top row">
+          <p className="flex-[1_1_200px] min-w-0 font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">{subtitle}</p>
+          <div role="group" aria-label="Period" className="bg-[#fafafa] border border-[#e5e5e5] flex gap-[2px] items-center rounded-[8px] shrink-0">
+            {(["Weekly", "Monthly"] as const).map((p) => {
+              const active = p === period;
               return (
-                <div key={i} className="absolute left-0 right-0 flex items-center gap-[8px] -translate-y-1/2" style={{ top: y }}>
-                  <p className={`shrink-0 text-right font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px] ${loading ? "invisible" : ""}`} style={{ width: Y_AXIS_WIDTH }}>
-                    {axisLabel(t, top)}
-                  </p>
-                  <div className="flex-1 h-px bg-[#e5e5e5]" />
-                </div>
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setPeriod(p)}
+                  className={`th-press flex h-[36px] items-center justify-center px-[12px] py-[8px] rounded-[8px] border outline-none font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[14px] whitespace-nowrap ${focusRing} ${active ? "bg-white border-[#d4d4d4] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] text-[#404040]" : "border-transparent text-[#737373] hover:text-[#404040]"}`}
+                >
+                  {p}
+                </button>
               );
             })}
+          </div>
+        </div>
 
-            <div className="absolute right-0 flex items-end" style={{ left: BARS_LEFT, top: PLOT_TOP, height: PLOT_HEIGHT }}>
-              {labels.map((label, i) => {
-                if (loading) {
-                  return (
-                    <div key={label} className="flex flex-1 min-w-px h-full items-end justify-center">
-                      <div className="bg-[#f5f5f5] rounded-t-[4px] w-[24px] animate-pulse" style={{ height: (skeletonHeights[i % skeletonHeights.length] / 200) * PLOT_HEIGHT }} />
-                    </div>
-                  );
-                }
-                const dim = hovered !== null && hovered !== i;
-                const parts = series.filter((s) => s.values[i] > 0);
+        <div className="flex flex-col gap-[16px] w-full">
+          <div className="flex flex-wrap gap-[8px] items-start w-full">
+            {!singleChannel && (
+              <Select
+                label="Product"
+                className="flex-[1_1_0] min-w-[140px]"
+                menuWidth={200}
+                value={channel.label}
+                options={owned.map((c) => c.label)}
+                onChange={changeChannel}
+                {...menu("product")}
+              />
+            )}
+            <Select
+              label="Show by"
+              className={singleChannel ? "flex-[1_1_0] min-w-[140px]" : "flex-[0_1_150px] min-w-[130px]"}
+              menuWidth={160}
+              value={showBy}
+              options={showByOptions}
+              onChange={setShowBy}
+              {...menu("showBy")}
+            />
+            <EventsFilter channel={channel} selected={selectedEvents} onToggle={toggleEvent} {...menu("events")} />
+          </div>
+          {isVolume && (
+            <div className="flex gap-[4px] items-center">
+              <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Amount in</p>
+              {currencies.length > 1 ? (
+                <CurrencyPicker value={currency} options={currencies} onChange={setCurrency} {...menu("currency")} />
+              ) : (
+                <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#404040] text-[14px]">{currency}</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {!hasChart ? (
+          <StateBody kind={status === "error" ? "error" : "empty"} span={span} onRetry={() => setReloadKey((k) => k + 1)} />
+        ) : (
+          <>
+            <div ref={chartRef} className="relative h-[220px] w-full" aria-busy={loading} onMouseLeave={() => setHovered(null)}>
+              {ticks.map((t, i) => {
+                const y = PLOT_TOP + (PLOT_HEIGHT / AXIS_STEPS) * i;
                 return (
-                  <button
-                    key={label}
-                    type="button"
-                    aria-label={`${titles[i]}: ${series.map((s) => `${s.label} ${fmt(s.values[i])}`).join(", ")}`}
-                    onMouseEnter={() => setHovered(i)}
-                    onFocus={() => setHovered(i)}
-                    onBlur={() => setHovered(null)}
-                    className={`th-dim flex flex-1 min-w-px h-full items-end justify-center outline-none cursor-default ${dim ? DIM_OPACITY : ""}`}
-                  >
-                    {parts.length > 0 && (
-                      <div
-                        className="th-bar-in flex w-[24px] flex-col-reverse gap-[2px] overflow-hidden rounded-t-[4px]"
-                        style={{ animationDelay: `${i * BAR_STAGGER_MS}ms` }}
-                      >
-                        {parts.map((s, j) => (
-                          <div
-                            key={s.label}
-                            className="w-full shrink-0"
-                            style={{ height: Math.max(MIN_SEGMENT, (s.values[i] / top) * PLOT_HEIGHT - (j > 0 ? 2 : 0)), background: s.color }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </button>
+                  <div key={i} className="absolute left-0 right-0 flex items-center gap-[8px] -translate-y-1/2" style={{ top: y }}>
+                    <p className={`shrink-0 text-right font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px] ${loading ? "invisible" : ""}`} style={{ width: Y_AXIS_WIDTH }}>
+                      {amountsHidden ? "•••" : axisLabel(t, top)}
+                    </p>
+                    <div className="flex-1 h-px bg-[#e5e5e5]" />
+                  </div>
                 );
               })}
-            </div>
 
-            <div className="absolute bottom-0 right-0 flex h-[18px]" style={{ left: BARS_LEFT }}>
-              {labels.map((label) => (
-                <p key={label} className={`flex-1 min-w-px text-center whitespace-nowrap font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px] ${loading ? "invisible" : ""}`}>
-                  {label}
-                </p>
-              ))}
-            </div>
-
-            {hovered !== null && status === "ready" && (
-              <div
-                role="tooltip"
-                className={`th-tooltip pointer-events-none absolute z-20 top-[8px] bg-white border border-[#e5e5e5] flex flex-col gap-[8px] p-[12px] rounded-[8px] ${menuShadow}`}
-                style={tooltipBox(hovered)}
-              >
-                <div className="flex items-center justify-between gap-[8px] whitespace-nowrap">
-                  <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#171717] text-[14px]">{titles[hovered]}</p>
-                  <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">{fmtTotal(totals[hovered])}</p>
-                </div>
-                <div className="flex flex-col gap-[4px]">
-                  {series.map((s) => (
-                    <div key={s.label} className="flex gap-[6px] items-center">
-                      <span className="rounded-[2px] size-[8px] shrink-0" style={{ background: s.color }} />
-                      <p className="flex-1 min-w-px font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#404040] text-[12px]">{s.label}</p>
-                      <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#171717] text-[14px] whitespace-nowrap">{fmt(s.values[hovered])}</p>
-                    </div>
-                  ))}
-                </div>
+              <div className="absolute right-0 flex items-end" style={{ left: BARS_LEFT, top: PLOT_TOP, height: PLOT_HEIGHT }}>
+                {labels.map((label, i) => {
+                  if (loading) {
+                    return (
+                      <div key={label} className="flex flex-1 min-w-px h-full items-end justify-center">
+                        <div className="bg-[#f5f5f5] rounded-t-[4px] w-[24px] animate-pulse" style={{ height: (skeletonHeights[i % skeletonHeights.length] / 200) * PLOT_HEIGHT }} />
+                      </div>
+                    );
+                  }
+                  const dim = hovered !== null && hovered !== i;
+                  const parts = series.filter((s) => s.values[i] > 0);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      aria-label={`${titles[i]}: ${series.map((s) => `${s.label} ${fmt(s.values[i])}`).join(", ")}`}
+                      onMouseEnter={() => setHovered(i)}
+                      onFocus={() => setHovered(i)}
+                      onBlur={() => setHovered(null)}
+                      className={`th-dim flex flex-1 min-w-px h-full items-end justify-center outline-none cursor-default ${dim ? DIM_OPACITY : ""}`}
+                    >
+                      {parts.length > 0 && (
+                        <div
+                          className="th-bar-in flex w-[24px] flex-col-reverse gap-[2px] overflow-hidden rounded-t-[4px]"
+                          style={{ animationDelay: `${i * BAR_STAGGER_MS}ms` }}
+                        >
+                          {parts.map((s, j) => (
+                            <div
+                              key={s.label}
+                              className="w-full shrink-0"
+                              style={{ height: Math.max(MIN_SEGMENT, (s.values[i] / top) * PLOT_HEIGHT - (j > 0 ? 2 : 0)), background: s.color }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
 
-          {loading ? (
-            <div className="flex h-[20px] items-center w-full">
-              <div className="bg-[#f5f5f5] h-[12px] rounded-[4px] w-[300px] max-w-full animate-pulse" />
+              <div className="absolute bottom-0 right-0 flex h-[18px]" style={{ left: BARS_LEFT }}>
+                {labels.map((label) => (
+                  <p key={label} className={`flex-1 min-w-px text-center whitespace-nowrap font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px] ${loading ? "invisible" : ""}`}>
+                    {label}
+                  </p>
+                ))}
+              </div>
+
+              {hovered !== null && status === "ready" && (
+                <div
+                  role="tooltip"
+                  className={`th-tooltip pointer-events-none absolute z-20 top-[8px] bg-white border border-[#e5e5e5] flex flex-col gap-[8px] p-[12px] rounded-[8px] ${menuShadow}`}
+                  style={tooltipBox(hovered)}
+                >
+                  <div className="flex items-center justify-between gap-[8px] whitespace-nowrap">
+                    <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#171717] text-[14px]">{titles[hovered]}</p>
+                    <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">{fmtTotal(totals[hovered])}</p>
+                  </div>
+                  <div className="flex flex-col gap-[4px]">
+                    {series.map((s) => (
+                      <div key={s.label} className="flex gap-[6px] items-center">
+                        <span className="rounded-[2px] size-[8px] shrink-0" style={{ background: s.color }} />
+                        <p className="flex-1 min-w-px font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#404040] text-[12px]">{s.label}</p>
+                        <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#171717] text-[14px] whitespace-nowrap">{fmt(s.values[hovered])}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <ul aria-label="Legend" className="flex flex-wrap gap-[4px_12px] items-start">
-              {series.map((s) => (
-                <li key={s.label} className="flex gap-[6px] items-center">
-                  <span className="rounded-full size-[10px] shrink-0 shadow-[inset_0_0_0_0.625px_rgba(0,0,0,0.1)]" style={{ background: s.color }} />
-                  <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] whitespace-nowrap">{s.label}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
 
-      <footer className="border-t border-[#e5e5e5] flex items-center gap-[6px] pt-[16px] w-full">
-        <img alt="" className="block size-[16px]" src={imgClock} />
-        <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">Last updated 18 Aug 2026, 09:30 WIB</p>
-      </footer>
-    </section>
+            {loading ? (
+              <div className="flex h-[20px] items-center w-full">
+                <div className="bg-[#f5f5f5] h-[12px] rounded-[4px] w-[300px] max-w-full animate-pulse" />
+              </div>
+            ) : (
+              <ul aria-label="Legend" className="flex flex-wrap gap-[4px_12px] items-start">
+                {series.map((s) => (
+                  <li key={s.label} className="flex gap-[6px] items-center">
+                    <span className="rounded-full size-[10px] shrink-0 shadow-[inset_0_0_0_0.625px_rgba(0,0,0,0.1)]" style={{ background: s.color }} />
+                    <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] whitespace-nowrap">{s.label}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+
+      </div>
+
+      <WidgetFooter updatedAt={updatedAt} onRefresh={status === "ready" || status === "empty" ? refresh : undefined} refreshing={refreshing} />
+    </WidgetCard>
   );
 }

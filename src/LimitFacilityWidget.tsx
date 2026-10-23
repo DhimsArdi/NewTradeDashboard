@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { currentDataset } from "./devData";
+import { WidgetCard, WidgetFooter, useRefresh } from "./WidgetShell";
+import { MASK, useAmountsHidden } from "./amountVisibility";
+import { daysFromToday, shortDate } from "./demoClock";
 
 const a = (file: string) => `/assets/${file}`;
 const imgChevronDown = a("transaction-history/chevronDown.svg");
 const imgChevronUp = a("73c3d.svg");
 const imgMenuCheck = a("transaction-history/menuCheck.svg");
-const imgClock = a("efc9f.svg");
 const imgAlert = a("transaction-history/alertCircle.svg");
 const imgRefresh = a("transaction-history/refresh.svg");
 
 // ---------- Demo data ----------
 
-// All facilities share one currency. The dropdown and the usage summary list the same facilities in the
-// same order (Figma 24:48271). Expiry dates other than Bill Purchasing Line's are demo values.
+// There are three facility types, always in this order in both the dropdown and the usage summary
+// (Figma 2346:22779 design notes). All share one currency; expiry dates are demo values counted from today.
 type Facility = { name: string; total: number; outstanding: number; expiry: string };
 
 const CURRENCY = "IDR";
@@ -20,14 +22,18 @@ const COLOR_OUTSTANDING = "#099697";
 const COLOR_AVAILABLE = "#6bc0c1";
 
 const baseFacilities: Facility[] = [
-  { name: "Bill Purchasing Line", total: 900_000_000, outstanding: 500_000_000, expiry: "30 Dec 2026" },
-  { name: "Sub Limit Export", total: 600_000_000, outstanding: 270_000_000, expiry: "30 Dec 2026" },
-  { name: "Local GB Facility Line", total: 1_200_000_000, outstanding: 840_000_000, expiry: "31 Mar 2027" },
-  { name: "Guarantee Line", total: 750_000_000, outstanding: 225_000_000, expiry: "30 Jun 2027" },
-  { name: "Sub Limit Bank Guarantee", total: 500_000_000, outstanding: 410_000_000, expiry: "31 Mar 2027" },
+  { name: "Bill Purchasing Line", total: 900_000_000, outstanding: 500_000_000, expiry: shortDate(daysFromToday(69)) },
+  { name: "Local Bank Guarantee", total: 1_200_000_000, outstanding: 840_000_000, expiry: shortDate(daysFromToday(160)) },
+  // Matches the "Facility limit expiry" entry in the Calendar widget.
+  { name: "Guarantee", total: 750_000_000, outstanding: 225_000_000, expiry: shortDate(daysFromToday(13)) },
 ];
 
-const money = (n: number) => `${CURRENCY} ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const formatMoney = (n: number) => `${CURRENCY} ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// Hide Amount masks every nominal; percentages and expiry dates stay.
+const useMoney = () => {
+  const hidden = useAmountsHidden();
+  return (n: number) => (hidden ? `${CURRENCY} ${MASK}` : formatMoney(n));
+};
 const usedPct = (f: Facility) => (f.total > 0 ? Math.min(100, Math.round((f.outstanding / f.total) * 100)) : 0);
 
 // Usage summary rows: 58px tall, 20px apart. The list shows three and a peek of the fourth, then scrolls.
@@ -43,13 +49,11 @@ type Status = "loading" | "ready" | "error";
 // ?lfFacilities=<n>|none keeps the first n facilities the customer owns (none hides the widget).
 const params = () => new URLSearchParams(window.location.search);
 const scenario = () => params().get("lfState");
-// Stress-test fixture for the dev data toggle: a huge untouched limit, an over-limit facility, long names, and a long list.
+// Stress-test fixture for the dev data toggle: a huge untouched limit, an over-limit facility and one almost fully used.
 const worstFacilities: Facility[] = [
-  { name: "Bill Purchasing Line", total: 125_000_000_000_000, outstanding: 0, expiry: "30 Dec 2026" },
-  { name: "Sub Limit Bank Guarantee", total: 690_000_000, outstanding: 731_500_000, expiry: "31 Mar 2027" },
-  { name: "Standby Letter of Credit Facility – Syndicated (Tranche B)", total: 20_000_000_000_000, outstanding: 19_999_000_000_000, expiry: "31 Dec 2030" },
-  ...baseFacilities.slice(1, 4),
-  { name: "Pre-Shipment Financing Line", total: 350_000_000, outstanding: 1_000_000, expiry: "30 Sep 2027" },
+  { ...baseFacilities[0], total: 125_000_000_000_000, outstanding: 0 },
+  { ...baseFacilities[1], total: 690_000_000, outstanding: 731_500_000 },
+  { ...baseFacilities[2], total: 20_000_000_000_000, outstanding: 19_999_000_000_000 },
 ];
 
 const ownedFacilities = (): Facility[] => {
@@ -171,11 +175,7 @@ const Skel = ({ w, h, className = "" }: { w: number | string; h: number; classNa
 );
 
 function LegendDot({ color }: { color: string }) {
-  return (
-    <span className="flex items-center justify-center shrink-0 size-[20px]">
-      <span className="rounded-full size-[8px]" style={{ background: color }} />
-    </span>
-  );
+  return <span className="rounded-full shrink-0 size-[10px] shadow-[inset_0_0_0_0.625px_rgba(0,0,0,0.1)]" style={{ background: color }} />;
 }
 
 function UsageHeader({ loading }: { loading: boolean }) {
@@ -185,14 +185,14 @@ function UsageHeader({ loading }: { loading: boolean }) {
         <h3 className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">Usage Summary</h3>
         <div className="h-px w-full bg-[#e5e5e5]" />
       </div>
-      <ul aria-label="Legend" className="flex gap-[20px] items-center">
+      <ul aria-label="Legend" className="flex gap-[12px] items-center">
         {[
           ["Outstanding", COLOR_OUTSTANDING],
           ["Available", COLOR_AVAILABLE],
         ].map(([label, color]) => (
-          <li key={label} className="flex items-center">
+          <li key={label} className="flex gap-[6px] items-center">
             <LegendDot color={loading ? "#f5f5f5" : color} />
-            <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#404040] text-[14px]">{label}</span>
+            <span className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">{label}</span>
           </li>
         ))}
       </ul>
@@ -202,6 +202,7 @@ function UsageHeader({ loading }: { loading: boolean }) {
 
 // Native overlay scrollbars hide until scrolled, so the thumb is drawn here and kept visible (as in the calendar list).
 function UsageList({ facilities }: { facilities: Facility[] }) {
+  const money = useMoney();
   const ref = useRef<HTMLUListElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
 
@@ -267,6 +268,8 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
   const [selectedName, setSelectedName] = useState(facilities[0]?.name ?? "");
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
+  const { refreshing, refresh, updatedAt } = useRefresh();
+  const money = useMoney();
 
   // Simulated fetch.
   useEffect(() => {
@@ -286,112 +289,108 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
   const bodyHeight = (single ? 234 : 250) + 16 + 89 + listHeight(facilities.length);
 
   return (
-    <section
-      aria-label="Facility Limit"
-      className={`bg-white border border-[#e5e5e5] border-solid drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex flex-col gap-[16px] items-start p-[24px] relative rounded-[16px] ${className}`}
-      data-name="Widget / Limit Facility"
+    <WidgetCard
+      title="Facility Limit"
+      info="Shows the available and used limit of each facility, based on your latest facility data at BNI."
+      className={className}
+      dataName="Widget / Limit Facility"
     >
-      <header className="flex flex-col gap-[2px] w-full">
-        <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Facility Limit</h2>
-        <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Select a facility to see its limit details.</p>
-      </header>
-
-      {status === "error" ? (
-        <div className="flex w-full flex-col items-center justify-center" style={{ minHeight: bodyHeight }}>
-          <div role="alert" className="flex flex-col gap-[16px] items-center py-[48px] w-full text-center">
-            <div className="relative bg-[#fee4e2] rounded-[24px] size-[48px] shrink-0">
-              <img alt="" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[28px]" src={imgAlert} />
+      <div className="flex flex-col p-[20px] w-full">
+        {status === "error" ? (
+          <div className="flex w-full flex-col items-center justify-center" style={{ minHeight: bodyHeight }}>
+            <div role="alert" className="flex flex-col gap-[16px] items-center py-[48px] w-full text-center">
+              <div className="relative bg-[#fee4e2] rounded-[24px] size-[48px] shrink-0">
+                <img alt="" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 size-[28px]" src={imgAlert} />
+              </div>
+              <div className="flex flex-col gap-[4px] items-center w-full">
+                <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">Limit Facility data is unavailable</p>
+                <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">We couldn't load this data right now. Please try again.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReloadKey((k) => k + 1)}
+                className={`th-press bg-white border border-[#d4d4d4] drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[4px] items-center justify-center px-[12px] py-[8px] rounded-full hover:bg-[#fafafa] outline-none ${focusRing}`}
+              >
+                <img alt="" className="block size-[20px]" src={imgRefresh} />
+                <span className="px-[2px] font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#404040] text-[14px]">Retry</span>
+              </button>
             </div>
-            <div className="flex flex-col gap-[4px] items-center w-full">
-              <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">Limit Facility data is unavailable</p>
-              <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">We couldn't load this data right now. Please try again.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setReloadKey((k) => k + 1)}
-              className={`th-press bg-white border border-[#d4d4d4] drop-shadow-[0px_1px_1px_rgba(0,0,0,0.05)] flex gap-[4px] items-center justify-center px-[12px] py-[8px] rounded-full hover:bg-[#fafafa] outline-none ${focusRing}`}
-            >
-              <img alt="" className="block size-[20px]" src={imgRefresh} />
-              <span className="px-[2px] font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#404040] text-[14px]">Retry</span>
-            </button>
           </div>
-        </div>
-      ) : status === "loading" ? (
-        <div aria-busy className="flex flex-col gap-[16px] w-full" style={{ minHeight: bodyHeight }}>
-          <div className="bg-gradient-to-b from-[#fefefe] to-[#fafafa] border border-[#e5e5e5] flex flex-col gap-[12px] p-[16px] rounded-[16px] w-full">
-            <div className="flex flex-col gap-[12px] w-full">
-              {single ? <Skel w={160} h={20} /> : <Skel w="100%" h={36} className="rounded-[8px]" />}
-              <div className="flex flex-col gap-[6px]">
-                <Skel w={73} h={11} />
-                <Skel w={220} h={17} />
+        ) : status === "loading" ? (
+          <div aria-busy className="flex flex-col gap-[16px] w-full" style={{ minHeight: bodyHeight }}>
+            <div className="bg-gradient-to-b from-[#fefefe] to-[#fafafa] border border-[#e5e5e5] flex flex-col gap-[12px] p-[16px] rounded-[16px] w-full">
+              <div className="flex flex-col gap-[12px] w-full">
+                {single ? <Skel w={160} h={20} /> : <Skel w="100%" h={36} className="rounded-[8px]" />}
+                <div className="flex flex-col gap-[6px]">
+                  <Skel w={73} h={11} />
+                  <Skel w={220} h={17} />
+                </div>
+              </div>
+              <div className="py-[4px] w-full">
+                <div className="h-px w-full bg-[#e5e5e5]" />
+              </div>
+              <div className="flex flex-col gap-[6px] w-full">
+                {[[162, 162], [162, 162], [220, 95]].map(([l, r], i) => (
+                  <div key={i} className="flex items-center justify-between h-[14px] w-full">
+                    <Skel w={l} h={12} />
+                    <Skel w={r} h={14} />
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="py-[4px] w-full">
-              <div className="h-px w-full bg-[#e5e5e5]" />
-            </div>
-            <div className="flex flex-col gap-[6px] w-full">
-              {[[162, 162], [162, 162], [220, 95]].map(([l, r], i) => (
-                <div key={i} className="flex items-center justify-between h-[14px] w-full">
-                  <Skel w={l} h={12} />
-                  <Skel w={r} h={14} />
-                </div>
-              ))}
+            <div className="flex flex-col gap-[16px] w-full">
+              <UsageHeader loading />
+              <div className="flex flex-col gap-[20px] w-full overflow-hidden" style={{ height: listHeight(facilities.length) }}>
+                {facilities.slice(0, 4).map((f, i) => (
+                  <div key={f.name} className="flex flex-col gap-[6px] w-full shrink-0">
+                    <div className="flex justify-between w-full">
+                      <Skel w={i === 0 ? 126 : 97} h={12} />
+                      <Skel w={61} h={12} />
+                    </div>
+                    <div className="flex gap-[2px] w-full">
+                      <Skel w={`calc((100% - 2px) * ${i === 0 ? 0.56 : 0.7})`} h={8} />
+                      <Skel w="auto" h={8} className="flex-1" />
+                    </div>
+                    <Skel w={220} h={11} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        ) : (
           <div className="flex flex-col gap-[16px] w-full">
-            <UsageHeader loading />
-            <div className="flex flex-col gap-[20px] w-full overflow-hidden" style={{ height: listHeight(facilities.length) }}>
-              {facilities.slice(0, 4).map((f, i) => (
-                <div key={f.name} className="flex flex-col gap-[6px] w-full shrink-0">
-                  <div className="flex justify-between w-full">
-                    <Skel w={i === 0 ? 126 : 97} h={12} />
-                    <Skel w={61} h={12} />
-                  </div>
-                  <div className="flex gap-[2px] w-full">
-                    <Skel w={`calc((100% - 2px) * ${i === 0 ? 0.56 : 0.7})`} h={8} />
-                    <Skel w="auto" h={8} className="flex-1" />
-                  </div>
-                  <Skel w={220} h={11} />
+            <div className="bg-gradient-to-b from-[#fefefe] to-[#fafafa] border border-[#e5e5e5] flex flex-col gap-[12px] p-[16px] rounded-[16px] w-full">
+              <div className="flex flex-col gap-[12px] w-full">
+                {single ? (
+                  <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#171717] text-[16px]">{facility.name}</p>
+                ) : (
+                  <FacilitySelect value={facility.name} options={facilities.map((f) => f.name)} onChange={setSelectedName} />
+                )}
+                <div key={facility.name} className="cal-fade-in flex flex-col gap-[6px] w-full">
+                  <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">Available limit</p>
+                  <FitAmount value={money(facility.total - facility.outstanding)} />
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-[16px] w-full">
-          <div className="bg-gradient-to-b from-[#fefefe] to-[#fafafa] border border-[#e5e5e5] flex flex-col gap-[12px] p-[16px] rounded-[16px] w-full">
-            <div className="flex flex-col gap-[12px] w-full">
-              {single ? (
-                <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#171717] text-[16px]">{facility.name}</p>
-              ) : (
-                <FacilitySelect value={facility.name} options={facilities.map((f) => f.name)} onChange={setSelectedName} />
-              )}
+              </div>
+              <div className="py-[4px] w-full">
+                <div className="h-px w-full bg-[#e5e5e5]" />
+              </div>
               <div key={facility.name} className="cal-fade-in flex flex-col gap-[6px] w-full">
-                <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">Available limit</p>
-                <FitAmount value={money(facility.total - facility.outstanding)} />
+                <SummaryRow label="Total limit" value={money(facility.total)} />
+                <SummaryRow label="Outstanding limit" value={money(facility.outstanding)} />
+                <SummaryRow label="Expiry date" value={facility.expiry} />
               </div>
             </div>
-            <div className="py-[4px] w-full">
-              <div className="h-px w-full bg-[#e5e5e5]" />
-            </div>
-            <div key={facility.name} className="cal-fade-in flex flex-col gap-[6px] w-full">
-              <SummaryRow label="Total limit" value={money(facility.total)} />
-              <SummaryRow label="Outstanding limit" value={money(facility.outstanding)} />
-              <SummaryRow label="Expiry date" value={facility.expiry} />
+
+            <div className="flex flex-col gap-[16px] w-full">
+              <UsageHeader loading={false} />
+              <UsageList facilities={facilities} />
             </div>
           </div>
+        )}
 
-          <div className="flex flex-col gap-[16px] w-full">
-            <UsageHeader loading={false} />
-            <UsageList facilities={facilities} />
-          </div>
-        </div>
-      )}
+      </div>
 
-      <footer className="border-t border-[#e5e5e5] flex items-center gap-[6px] pt-[16px] w-full">
-        <img alt="" className="block size-[16px]" src={imgClock} />
-        <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">Last updated 18 Aug 2026, 09:30 WIB</p>
-      </footer>
-    </section>
+      <WidgetFooter updatedAt={updatedAt} onRefresh={status === "ready" ? refresh : undefined} refreshing={refreshing} />
+    </WidgetCard>
   );
 }

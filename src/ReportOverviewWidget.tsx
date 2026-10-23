@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { currentDataset } from "./devData";
+import { WidgetCard } from "./WidgetShell";
+import { TODAY } from "./demoClock";
 
 const a = (file: string) => `/assets/report-overview/${file}`;
 const imgFile06 = a("file06.svg");
@@ -69,14 +71,14 @@ const formats = [
   { value: "PDF (.pdf)", short: "PDF", sub: "Ready to print or share" },
 ];
 
-// Months are indexed as year * 12 + month. Data is available from Jan 2022 to the current month (Aug 2026).
+// Months are indexed as year * 12 + month. Data is available from January four years back to the current month.
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const LATEST_MONTH = 2026 * 12 + 7;
-const EARLIEST_MONTH = 2022 * 12;
+const LATEST_MONTH = TODAY.getFullYear() * 12 + TODAY.getMonth();
+const EARLIEST_MONTH = (TODAY.getFullYear() - 4) * 12;
 const MAX_MONTHS_PER_FILE = 12;
 const monthLabel = (m: number) => `${MONTH_NAMES[m % 12]} ${Math.floor(m / 12)}`;
 const monthOptions = Array.from({ length: LATEST_MONTH - EARLIEST_MONTH + 1 }, (_, i) => LATEST_MONTH - i);
-const yearOptions = [2026, 2025, 2024, 2023, 2022];
+const yearOptions = Array.from({ length: 5 }, (_, i) => TODAY.getFullYear() - i);
 
 const rangeLabel = (from: number, to: number) => {
   const fy = Math.floor(from / 12);
@@ -174,17 +176,6 @@ function FeaturedIcon({ src }: { src: string }) {
         <img alt="" className="absolute block inset-0 max-w-none size-full" src={src} />
       </div>
       <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_0px_0px_0px_rgba(16,24,40,0.18),inset_0px_-2px_0px_0px_rgba(16,24,40,0.05)]" />
-    </div>
-  );
-}
-
-function SectionHeader() {
-  return (
-    <div className="[word-break:break-word] content-stretch flex flex-col gap-[2px] items-start not-italic relative shrink-0 w-full" data-name="Section header">
-      <p className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] relative shrink-0 text-[#171717] text-[18px] w-full">Report Overview</p>
-      <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] relative shrink-0 text-[#525252] text-[14px] w-full">
-        Download reports of your transactions and facility limits.
-      </p>
     </div>
   );
 }
@@ -483,7 +474,7 @@ function DownloadReportModal({ report, onClose, onDownload }: { report: ReportSu
   const [period, setPeriod] = useState<"Monthly" | "Yearly">("Monthly");
   const [fromMonth, setFromMonth] = useState(LATEST_MONTH - 5);
   const [toMonth, setToMonth] = useState(LATEST_MONTH);
-  const [year, setYear] = useState(2025);
+  const [year, setYear] = useState(TODAY.getFullYear() - 1);
   const [format, setFormat] = useState(formats[0].value);
   const [infoMode, setInfoMode] = useState<"default" | "choose">("default");
   const columnSet = isTransactionHistory ? products[product] : limitFacilityColumns;
@@ -606,7 +597,7 @@ function DownloadReportModal({ report, onClose, onDownload }: { report: ReportSu
             ) : (
               <SelectField
                 onSelect={(v) => setYear(Number(v))}
-                options={yearOptions.map((y) => ({ value: String(y), label: String(y), sub: y === 2026 ? "Jan – Aug, year to date" : undefined }))}
+                options={yearOptions.map((y) => ({ value: String(y), label: String(y), sub: y === TODAY.getFullYear() ? `Jan – ${MONTH_NAMES[TODAY.getMonth()]}, year to date` : undefined }))}
                 selected={String(year)}
                 value={String(year)}
                 {...menuProps("year")}
@@ -750,23 +741,20 @@ export default function ReportOverviewWidget({ className = "" }: { className?: s
   };
 
   return (
-    <div
-      className={`@container bg-white border border-[#e5e5e5] border-solid content-stretch flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative rounded-[16px] ${className}`}
-      data-node-id="79:7"
-      data-name="Widget / Report Overview"
-    >
-      <SectionHeader />
-      {status === "error" ? (
-        <ErrorState onRetry={load} />
-      ) : (
-        <div aria-busy={status === "loading"} className="flex flex-col gap-[12px] items-start overflow-clip shrink-0 w-full" data-name="Reports">
-          {status === "loading"
-            ? defaultReports.map((r) => <SkeletonRow key={r.id} />)
-            : reports.map((r) => <ReportRow key={r.id} onDownload={() => setModalReport(r)} preparing={!!preparing[r.id]} report={r} />)}
-        </div>
-      )}
+    <WidgetCard title="Report Overview" info="Download reports of your transactions and facility limits." className={className} dataName="Widget / Report Overview">
+      <div className="@container flex flex-col p-[20px] w-full">
+        {status === "error" ? (
+          <ErrorState onRetry={load} />
+        ) : (
+          <div aria-busy={status === "loading"} className="flex flex-col gap-[12px] items-start overflow-clip shrink-0 w-full" data-name="Reports">
+            {status === "loading"
+              ? defaultReports.map((r) => <SkeletonRow key={r.id} />)
+              : reports.map((r) => <ReportRow key={r.id} onDownload={() => setModalReport(r)} preparing={!!preparing[r.id]} report={r} />)}
+          </div>
+        )}
+      </div>
       {modalReport && <DownloadReportModal key={modalReport.id} onClose={() => setModalReport(null)} onDownload={download} report={modalReport} />}
       {toast && <ReportToast onDismiss={() => setToast(null)} toast={toast} />}
-    </div>
+    </WidgetCard>
   );
 }

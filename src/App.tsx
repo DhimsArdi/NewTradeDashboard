@@ -5,7 +5,10 @@ import ReportOverviewWidget from "./ReportOverviewWidget";
 import CalendarWidget from "./CalendarWidget";
 import LimitFacilityWidget from "./LimitFacilityWidget";
 import TransactionOverviewWidget from "./TransactionOverviewWidget";
+import QuickAccessWidget from "./QuickAccessWidget";
 import { DevDataToggle, useDataset } from "./devData";
+import PageHeader from "./PageHeader";
+import { AmountsHiddenProvider } from "./amountVisibility";
 
 const assetPathPrefix = "/assets";
 const imgLogo = `${assetPathPrefix}/f2ae2.png`;
@@ -30,7 +33,16 @@ const imgChartBreakoutCircle = `${assetPathPrefix}/625b8.svg`;
 const imgBank = `${assetPathPrefix}/cf740.svg`;
 const imgArrowCircleBrokenUpRight = `${assetPathPrefix}/7c7ea.svg`;
 const imgContainer1 = `${assetPathPrefix}/62582.svg`;
-const imgChevronRight1 = `${assetPathPrefix}/bc2d8.svg`;
+
+// Hide Amount is a per-viewer preference, remembered across visits.
+const HIDE_AMOUNT_KEY = "trade-dashboard:hide-amount";
+const readAmountsHidden = () => {
+  try {
+    return localStorage.getItem(HIDE_AMOUNT_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
 
 const NAV_EXPANDED = 336;
 const NAV_COLLAPSED = 88;
@@ -38,6 +50,16 @@ const NAV_COLLAPSED = 88;
 export default function TradeDashboardMaster() {
   const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(false);
   const [notice, setNotice] = useState("");
+  const [amountsHidden, setAmountsHidden] = useState(readAmountsHidden);
+  const toggleAmounts = () => {
+    const next = !amountsHidden;
+    setAmountsHidden(next);
+    try {
+      localStorage.setItem(HIDE_AMOUNT_KEY, next ? "1" : "0");
+    } catch {
+      // Storage can be blocked; the toggle still works for this visit.
+    }
+  };
   // Dev-only fixture switch; remounting the widgets reloads them with the chosen dataset.
   const dataset = useDataset();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -81,105 +103,25 @@ export default function TradeDashboardMaster() {
         data-node-id="2:19887"
       >
         <div className="content-stretch flex flex-col items-start min-w-[400px] pointer-events-auto pr-[8px] py-[8px] rounded-[16px] w-full" data-name="container_wrapper">
-          <div className="bg-[#f5f5f5] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start min-h-[calc(100svh-16px)] overflow-clip py-[32px] relative rounded-[16px] shrink-0 w-full" data-node-id="2:19888" data-name="Main">
+          <div className="bg-[#f5f5f5] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start min-h-[calc(100svh-16px)] overflow-clip pb-[32px] pt-[40px] relative rounded-[16px] shrink-0 w-full" data-node-id="2:19888" data-name="Main">
             <div className="@container flex flex-col gap-[32px] max-w-[1280px] relative self-center shrink-0 w-full" data-node-id="42:64534" data-name="Vertical Scroll">
-              <div className="content-stretch flex flex-col items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19889" data-name="Header Section 1">
-                <div className="content-stretch flex flex-col gap-[20px] isolate items-start relative shrink-0 w-full" data-node-id="2:19890" data-name="Section header">
-                  <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full z-[2]" data-node-id="I2:19890;3839:10709" data-name="Content">
-                    <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-[2px] items-start justify-center min-w-px not-italic relative self-stretch" data-node-id="I2:19890;3839:10710" data-name="Text and supporting text">
-                      <p className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] relative shrink-0 text-[#171717] text-[20px] w-full" data-node-id="I2:19890;3839:10711">
-                        Financial Overview
-                      </p>
-                      <p className="font-['TT_Interphases_Pro:Regular'] leading-[24px] overflow-hidden relative shrink-0 text-[#525252] text-[16px] text-ellipsis w-full whitespace-nowrap" data-node-id="I2:19890;3839:10712">
-                        Monitor your trade activities, check limits, and manage tasks.
-                      </p>
-                    </div>
+              <div className="flex px-[32px] w-full">
+                <PageHeader amountsHidden={amountsHidden} onToggleAmounts={toggleAmounts} onManageWidget={() => setNotice("Manage Widget opened")} />
+              </div>
+              <AmountsHiddenProvider value={amountsHidden}>
+                <div className="@min-[880px]:flex-row content-stretch flex flex-col gap-[24px] items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19891" data-name="Container <>">
+                  <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-start min-w-px relative w-full" data-node-id="2:19892" data-name="Left-Column">
+                    <LimitFacilityWidget key={`limit-${dataset}`} className="shrink-0 w-full" />
+                    <TransactionHistoryWidget key={`history-${dataset}`} className="shrink-0 w-full" />
+                    <ReportOverviewWidget key={`report-${dataset}`} className="shrink-0 w-full" />
+                  </div>
+                  <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-center min-w-px relative w-full" data-node-id="2:20089" data-name="Right-Column">
+                    <TransactionOverviewWidget key={`overview-${dataset}`} className="shrink-0 w-full" />
+                    <CalendarWidget key={`calendar-${dataset}`} className="shrink-0 w-full" />
+                    <QuickAccessWidget className="shrink-0 w-full" />
                   </div>
                 </div>
-              </div>
-              <div className="@min-[880px]:flex-row content-stretch flex flex-col gap-[24px] items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19891" data-name="Container <>">
-                <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-start min-w-px relative w-full" data-node-id="2:19892" data-name="Left-Column">
-                  <LimitFacilityWidget key={`limit-${dataset}`} className="shrink-0 w-full" />
-                  <TransactionHistoryWidget key={`history-${dataset}`} className="shrink-0 w-full" />
-                  <ReportOverviewWidget key={`report-${dataset}`} className="shrink-0 w-full" />
-                </div>
-                <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-center min-w-px relative w-full" data-node-id="2:20089" data-name="Right-Column">
-                  <TransactionOverviewWidget key={`overview-${dataset}`} className="shrink-0 w-full" />
-                  <CalendarWidget key={`calendar-${dataset}`} className="shrink-0 w-full" />
-                  <div className="bg-white border border-[#e5e5e5] border-solid content-stretch flex flex-col gap-[16px] items-center overflow-clip p-[24px] relative rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] shrink-0 w-full" data-node-id="2:20198" data-name="Widget / Quick Access (input PO)">
-                    <div className="content-stretch flex flex-col gap-[20px] isolate items-start relative shrink-0 w-full" data-node-id="2:20199" data-name="Section header">
-                      <div className="content-stretch flex gap-[16px] items-start relative shrink-0 w-full z-[2]" data-node-id="I2:20199;3932:6956" data-name="Content">
-                        <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-[2px] items-start justify-center min-w-px not-italic relative self-stretch" data-node-id="I2:20199;3932:6957" data-name="Text and supporting text">
-                          <p className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] relative shrink-0 text-[#171717] text-[18px] w-full" data-node-id="I2:20199;3932:6958">
-                            Quick Access
-                          </p>
-                          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] overflow-hidden relative shrink-0 text-[#525252] text-[14px] text-ellipsis w-full whitespace-nowrap" data-node-id="I2:20199;3932:6959">
-                            Your most used transactions, based on your activity.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="content-stretch flex flex-col gap-[12px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2:20200" data-name="Shortcuts (max 4)">
-                      <div className="content-stretch flex gap-[12px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2:20201" data-name="Row">
-                        <div className="bg-[#fafafa] border border-[#e5e5e5] border-solid content-stretch flex flex-[1_0_0] gap-[12px] items-center min-w-px overflow-clip p-[16px] relative rounded-[12px] self-stretch" data-node-id="2:20202" data-name="Shortcut · Apply for Register Document">
-                          <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-[2px] items-start min-w-px not-italic overflow-clip relative" data-node-id="2:20204" data-name="Text">
-                            <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] overflow-hidden relative shrink-0 text-[#171717] text-[14px] text-ellipsis w-full whitespace-nowrap" data-node-id="2:20205">
-                              Apply for Register Document
-                            </p>
-                            <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] relative shrink-0 text-[#525252] text-[12px] w-full" data-node-id="2:20206">
-                              Export LC
-                            </p>
-                          </div>
-                          <div className="relative shrink-0 size-[24px]" data-node-id="2:20203" data-name="chevron-right">
-                            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight1} />
-                          </div>
-                        </div>
-                        <div className="bg-[#fafafa] border border-[#e5e5e5] border-solid content-stretch flex flex-[1_0_0] gap-[12px] items-center min-w-px overflow-clip p-[16px] relative rounded-[12px] self-stretch" data-node-id="2:20207" data-name="Shortcut · Apply for Finance">
-                          <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-[2px] items-start min-w-px not-italic overflow-clip relative" data-node-id="2:20209" data-name="Text">
-                            <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] overflow-hidden relative shrink-0 text-[#171717] text-[14px] text-ellipsis w-full whitespace-nowrap" data-node-id="2:20210">
-                              Apply for Finance
-                            </p>
-                            <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] relative shrink-0 text-[#525252] text-[12px] w-full" data-node-id="2:20211">
-                              Export LC
-                            </p>
-                          </div>
-                          <div className="relative shrink-0 size-[24px]" data-node-id="33:48386" data-name="chevron-right">
-                            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight1} />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="content-stretch flex gap-[12px] items-start overflow-clip relative shrink-0 w-full" data-node-id="2:20212" data-name="Row">
-                        <div className="bg-[#fafafa] border border-[#e5e5e5] border-solid content-stretch flex flex-[1_0_0] gap-[12px] items-center min-w-px overflow-clip p-[16px] relative rounded-[12px] self-stretch" data-node-id="2:20213" data-name="Shortcut · Apply for Guarantee">
-                          <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-[2px] items-start min-w-px not-italic overflow-clip relative" data-node-id="2:20215" data-name="Text">
-                            <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] overflow-hidden relative shrink-0 text-[#171717] text-[14px] text-ellipsis w-full whitespace-nowrap" data-node-id="2:20216">
-                              Apply for Guarantee
-                            </p>
-                            <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] relative shrink-0 text-[#525252] text-[12px] w-full" data-node-id="2:20217">
-                              Bank Guarantee
-                            </p>
-                          </div>
-                          <div className="relative shrink-0 size-[24px]" data-node-id="33:48392" data-name="chevron-right">
-                            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight1} />
-                          </div>
-                        </div>
-                        <div className="bg-[#fafafa] border border-[#e5e5e5] border-solid content-stretch flex flex-[1_0_0] gap-[12px] items-center min-w-px overflow-clip p-[16px] relative rounded-[12px]" data-node-id="2:20218" data-name="Shortcut · Apply for Amendment">
-                          <div className="[word-break:break-word] content-stretch flex flex-[1_0_0] flex-col gap-[2px] items-start min-w-px not-italic overflow-clip relative" data-node-id="2:20220" data-name="Text">
-                            <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] overflow-hidden relative shrink-0 text-[#171717] text-[14px] text-ellipsis w-full whitespace-nowrap" data-node-id="2:20221">
-                              Apply for Amendment
-                            </p>
-                            <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] relative shrink-0 text-[#525252] text-[12px] w-full" data-node-id="2:20222">
-                              Bank Guarantee
-                            </p>
-                          </div>
-                          <div className="relative shrink-0 size-[24px]" data-node-id="33:48389" data-name="chevron-right">
-                            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgChevronRight1} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </AmountsHiddenProvider>
             </div>
           </div>
         </div>

@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { currentDataset } from "./devData";
+import { WidgetCard, WidgetFooter, useRefresh } from "./WidgetShell";
+import { maskAmount, useAmountsHidden } from "./amountVisibility";
+import { TODAY, daysFromToday } from "./demoClock";
 
 const a = (file: string) => `/assets/${file}`;
 const imgDotExpiry = a("056f2.svg");
@@ -8,14 +11,11 @@ const imgDotAmend = a("d0149.svg");
 const imgChevronLeft = a("2c9c3.svg");
 const imgChevronRight = a("e9a5b.svg");
 const imgSeparator = a("93f8f.svg");
-const imgClock = a("efc9f.svg");
 const imgEmpty = a("calendar/emptyState.svg");
 const imgAlert = a("transaction-history/alertCircle.svg");
 const imgRefresh = a("transaction-history/refresh.svg");
 
 // ---------- Demo data ----------
-
-const TODAY = new Date(2026, 7, 18);
 
 type Expiry = {
   date: Date;
@@ -26,30 +26,30 @@ type Expiry = {
 };
 
 const expiries: Expiry[] = [
-  { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01236S26", counterparty: "Mitsui & Co., Ltd.", amount: "EUR 58,900.00" },
-  { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00301A25", counterparty: "PT Wijaya Karya", amount: "IDR 1,250,000,000.00", amendExtend: true },
-  { date: new Date(2026, 7, 24), title: "Export LC expiry - ELTRG01238S26", counterparty: "Wilmar Trading Pte. Ltd.", amount: "SGD 212,000.00" },
-  { date: new Date(2026, 7, 27), title: "BG expiry - IGTRG00298A25", counterparty: "PT Pertamina", amount: "IDR 2,800,980,000.00", amendExtend: true },
-  { date: new Date(2026, 7, 28), title: "Export LC expiry - ELTRG01242S26", counterparty: "Cargill Asia Pacific", amount: "USD 96,800.00" },
-  { date: new Date(2026, 7, 31), title: "Facility limit expiry", counterparty: "Bank Guarantee Limit", amount: "IDR 690,000,000.00" },
-  { date: new Date(2026, 7, 31), title: "BG expiry - IGTRG00305A25", counterparty: "PT Adhi Karya", amount: "IDR 450,000,000.00" },
-  { date: new Date(2026, 8, 8), title: "Export LC expiry - ELTRG01240S26", counterparty: "Itochu Corporation", amount: "USD 310,000.00" },
-  { date: new Date(2026, 8, 15), title: "Facility limit expiry", counterparty: "Bill Purchasing Line", amount: "IDR 5,000,000,000.00" },
-  { date: new Date(2026, 8, 22), title: "BG expiry - IGTRG00312A25", counterparty: "PT Waskita Karya", amount: "IDR 980,000,000.00" },
+  { date: daysFromToday(2), title: "Export LC expiry - ELTRG01236S26", counterparty: "Mitsui & Co., Ltd.", amount: "EUR 58,900.00" },
+  { date: daysFromToday(2), title: "BG expiry - IGTRG00301A25", counterparty: "PT Wijaya Karya", amount: "IDR 1,250,000,000.00", amendExtend: true },
+  { date: daysFromToday(6), title: "Export LC expiry - ELTRG01238S26", counterparty: "Wilmar Trading Pte. Ltd.", amount: "SGD 212,000.00" },
+  { date: daysFromToday(9), title: "BG expiry - IGTRG00298A25", counterparty: "PT Pertamina", amount: "IDR 2,800,980,000.00", amendExtend: true },
+  { date: daysFromToday(10), title: "Export LC expiry - ELTRG01242S26", counterparty: "Cargill Asia Pacific", amount: "USD 96,800.00" },
+  { date: daysFromToday(13), title: "Facility limit expiry", counterparty: "Guarantee", amount: "IDR 750,000,000.00" },
+  { date: daysFromToday(13), title: "BG expiry - IGTRG00305A25", counterparty: "PT Adhi Karya", amount: "IDR 450,000,000.00" },
+  { date: daysFromToday(21), title: "Export LC expiry - ELTRG01240S26", counterparty: "Itochu Corporation", amount: "USD 310,000.00" },
+  { date: daysFromToday(35), title: "BG expiry - IGTRG00312A25", counterparty: "PT Waskita Karya", amount: "IDR 980,000,000.00" },
+  { date: daysFromToday(69), title: "Facility limit expiry", counterparty: "Bill Purchasing Line", amount: "IDR 900,000,000.00" },
 ];
 
-// Stress-test fixtures for the dev data toggle: long names, huge amounts, a crowded day, a 60-item month.
+// Stress-test fixtures for the dev data toggle: long names, huge amounts, a crowded day, a 60-item next month.
 const worstExpiries: Expiry[] = [
-  { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01236S26-AMD03", counterparty: "PT Perusahaan Perdagangan Internasional Nusantara Sejahtera Tbk", amount: "IDR 12,500,000,000,000.00" },
-  { date: new Date(2026, 7, 20), title: "Facility limit expiry", counterparty: "Standby Letter of Credit Facility – Syndicated (Tranche B)", amount: "USD 1,250,000,000.00", amendExtend: true },
-  { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00301A25", counterparty: "Jo", amount: "IDR 0.00" },
-  { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01237S26", counterparty: "Đặng Thị Ngọc Hân Trading Co., Ltd.", amount: "VND 25,000,000,000.00" },
-  { date: new Date(2026, 7, 20), title: "BG expiry - IGTRG00302A25", counterparty: "Mitsubishi UFJ Trust and Banking Corporation, Singapore Branch", amount: "JPY 1,234,567,890,123.00", amendExtend: true },
-  { date: new Date(2026, 7, 20), title: "Export LC expiry - ELTRG01239S26", counterparty: "王秀英贸易有限公司", amount: "CNY 88,000.00" },
-  { date: new Date(2026, 7, 27), title: "BG expiry - IGTRG00298A25", counterparty: "PT Pertamina (Persero)", amount: "IDR 2,800,980,000.00", amendExtend: true },
-  { date: new Date(2026, 7, 31), title: "Facility limit expiry", counterparty: "Bank Guarantee Limit", amount: "IDR 690,000,000.00" },
+  { date: daysFromToday(2), title: "Export LC expiry - ELTRG01236S26-AMD03", counterparty: "PT Perusahaan Perdagangan Internasional Nusantara Sejahtera Tbk", amount: "IDR 12,500,000,000,000.00" },
+  { date: daysFromToday(2), title: "Facility limit expiry", counterparty: "Local Bank Guarantee", amount: "IDR 1,250,000,000,000.00", amendExtend: true },
+  { date: daysFromToday(2), title: "BG expiry - IGTRG00301A25", counterparty: "Jo", amount: "IDR 0.00" },
+  { date: daysFromToday(2), title: "Export LC expiry - ELTRG01237S26", counterparty: "Đặng Thị Ngọc Hân Trading Co., Ltd.", amount: "VND 25,000,000,000.00" },
+  { date: daysFromToday(2), title: "BG expiry - IGTRG00302A25", counterparty: "Mitsubishi UFJ Trust and Banking Corporation, Singapore Branch", amount: "JPY 1,234,567,890,123.00", amendExtend: true },
+  { date: daysFromToday(2), title: "Export LC expiry - ELTRG01239S26", counterparty: "王秀英贸易有限公司", amount: "CNY 88,000.00" },
+  { date: daysFromToday(9), title: "BG expiry - IGTRG00298A25", counterparty: "PT Pertamina (Persero)", amount: "IDR 2,800,980,000.00", amendExtend: true },
+  { date: daysFromToday(13), title: "Facility limit expiry", counterparty: "Guarantee", amount: "IDR 750,000,000.00" },
   ...Array.from({ length: 60 }, (_, i) => ({
-    date: new Date(2026, 8, 1 + (i % 30)),
+    date: new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 1 + (i % 28)),
     title: `Export LC expiry - ELTRG0${1300 + i}S26`,
     counterparty: i % 2 ? "Wilmar Trading Pte. Ltd." : "Cargill Asia Pacific",
     amount: `USD ${(96_800 + i * 1_250).toLocaleString("en-US")}.00`,
@@ -130,6 +130,7 @@ function Day({ date, state, dots, label, onSelect }: { date: Date; state: DaySta
 function ExpiryItem({ item }: { item: Expiry }) {
   const day = String(item.date.getDate()).padStart(2, "0");
   const month = item.date.toLocaleString("en-US", { month: "short" }).toUpperCase();
+  const hidden = useAmountsHidden();
   return (
     <li className="border-b border-[#f5f5f5] flex gap-[16px] min-h-[74px] items-center pl-[8px] pr-[12px] py-[13.5px] w-full">
       <div className="bg-[#f9f9f9] flex flex-col items-center justify-center rounded-[8px] shrink-0 size-[40px] font-['TT_Interphases_Pro:Medium'] leading-[18px] text-[#171717] text-[12px] text-center">
@@ -151,7 +152,7 @@ function ExpiryItem({ item }: { item: Expiry }) {
             <span title={item.counterparty} className="min-w-0 max-w-full truncate">{item.counterparty}</span>
             <span className="flex gap-[8px] items-center tabular-nums">
               <img alt="" className="block size-[4px] shrink-0" src={imgSeparator} />
-              {item.amount}
+              {hidden ? maskAmount(item.amount) : item.amount}
             </span>
           </div>
         </div>
@@ -241,6 +242,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
   const [selected, setSelected] = useState<Date | null>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
+  const { refreshing, refresh, updatedAt } = useRefresh();
   const [expiries] = useState(expiryData);
 
   // Simulated fetch per visible month.
@@ -290,24 +292,12 @@ export default function CalendarWidget({ className = "" }: { className?: string 
       ).filter(([show]) => show)
     : [];
 
-  const listTitle = selected ? `Expiries on ${dayLabel(selected)}` : isCurrentMonth ? "Upcoming expiries" : `Expiries in ${monthLabel(month)}`;
+  const listTitle = selected ? `Expiries on ${dayLabel(selected)}` : isCurrentMonth ? "Upcoming expiry" : `Expiries in ${monthLabel(month)}`;
   const showEmpty = status === "empty" || (ready && listItems.length === 0);
 
   return (
-    <section
-      aria-label="Calendar"
-      className={`bg-white border border-[#e5e5e5] border-solid flex flex-col gap-[16px] items-start overflow-clip p-[24px] relative rounded-[16px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] ${className}`}
-      data-name="Widget / Calendar"
-    >
-      <header className="flex flex-col gap-[12px] w-full">
-        <div className="flex flex-col gap-[2px]">
-          <h2 className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[18px]">Calendar</h2>
-          <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px]">Shows the expiry dates of your transactions and facility limits.</p>
-        </div>
-        <div className="h-px w-full bg-[#e5e5e5]" />
-      </header>
-
-      <div className="flex flex-col gap-[16px] w-full">
+    <WidgetCard title="Calendar" info="Shows the expiry dates of your transactions and facility limits." className={className} dataName="Widget / Calendar">
+      <div className="flex flex-col gap-[16px] p-[20px] w-full">
         <div className="flex flex-col gap-[12px] w-full">
           <div className="flex items-center justify-between w-full">
             <p aria-live="polite" className="font-['TT_Interphases_Pro:DemiBold'] leading-[28px] text-[#171717] text-[18px] whitespace-nowrap">
@@ -429,10 +419,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
         </div>
       </div>
 
-      <footer className="border-t border-[#e5e5e5] flex items-center gap-[6px] pt-[16px] w-full">
-        <img alt="" className="block size-[16px]" src={imgClock} />
-        <p className="font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px]">Last updated 18 Aug 2026, 09:30 WIB</p>
-      </footer>
-    </section>
+      <WidgetFooter updatedAt={updatedAt} onRefresh={status === "error" || status === "loading" ? undefined : refresh} refreshing={refreshing} />
+    </WidgetCard>
   );
 }

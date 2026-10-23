@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { currentDataset } from "./devData";
+import { WidgetCard } from "./WidgetShell";
 
 const a = (file: string) => `/assets/${file}`;
 const imgAlertCircle = a("9dcb1.svg");
@@ -48,49 +49,49 @@ type CardProps = {
 function Card({ name, title, icon, iconBg, iconSize, count, description, zeroDescription, action, status, onRetry }: CardProps) {
   const isError = status === "error";
   return (
-    <div
-      aria-busy={status === "loading"}
-      className="bg-white border border-[#e5e5e5] border-solid flex flex-[1_0_0] flex-col gap-[12px] items-start min-w-px overflow-clip p-[20px] relative rounded-[16px]"
-      data-name={`Transaction Overview / ${name}`}
-    >
-      <div className="flex gap-[8px] items-center w-full" data-name="Top">
-        <div className="relative rounded-[20px] shrink-0 size-[32px]" style={{ background: iconBg }} data-name="Featured icon">
-          <img alt="" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 block max-w-none ${iconSize}`} src={icon} />
-        </div>
-        <p className="[word-break:break-word] flex-[1_0_0] font-['TT_Interphases_Pro:Medium'] leading-[24px] min-w-px text-[#404040] text-[16px]">{title}</p>
-      </div>
-
-      {status === "loading" ? (
-        <>
-          <div className="bg-[#f5f5f5] h-[29px] rounded-[4px] shrink-0 w-[40px] animate-pulse" />
-          <div className="flex flex-col gap-[8px] h-[40px] py-[4px] w-full">
-            <div className="bg-[#f5f5f5] h-[12px] rounded-[4px] w-full animate-pulse" />
-            <div className="bg-[#f5f5f5] h-[12px] rounded-[4px] w-[120px] max-w-full animate-pulse" />
+    <WidgetCard title={title} className="flex-[1_0_0] min-w-px" dataName={`Transaction Overview / ${name}`}>
+      <div aria-busy={status === "loading"} className="flex flex-col gap-[12px] items-start p-[20px] w-full">
+        <div className="flex gap-[8px] items-center w-full" data-name="Top">
+          <div className="relative rounded-[20px] shrink-0 size-[32px]" style={{ background: iconBg }} data-name="Featured icon">
+            <img alt="" className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 block max-w-none ${iconSize}`} src={icon} />
           </div>
-          <div className="bg-[#f5f5f5] h-[20px] rounded-[4px] shrink-0 w-[80px] animate-pulse" />
-        </>
-      ) : (
-        <>
-          <p className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] text-[#171717] text-[24px] tabular-nums whitespace-nowrap">
-            {isError ? "—" : count.toLocaleString("en-US")}
-          </p>
-          <p role={isError ? "alert" : undefined} className="[word-break:break-word] font-['TT_Interphases_Pro:Regular'] min-h-[40px] leading-[20px] text-[#525252] text-[14px] w-full">
-            {isError ? "Couldn't load this data. Please try again." : count === 0 ? zeroDescription : description}
-          </p>
-          <button
-            type="button"
-            onClick={isError ? onRetry : undefined}
-            className={`th-press flex gap-[6px] items-center justify-center rounded-[4px] outline-none ${focusRing}`}
-          >
-            {isError && <img alt="" className="block shrink-0 size-[20px]" src={imgRefresh} />}
-            <span className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#ff6b00] text-[14px] underline decoration-from-font [text-underline-position:from-font] [text-decoration-skip-ink:none] whitespace-nowrap">
-              {isError ? "Retry" : action}
-            </span>
-            {!isError && <img alt="" className="block shrink-0 size-[20px]" src={imgArrowRight} />}
-          </button>
-        </>
-      )}
-    </div>
+          {status === "loading" ? (
+            <div className="bg-[#f5f5f5] h-[29px] rounded-[4px] shrink-0 w-[40px] animate-pulse" />
+          ) : (
+            <p className="font-['TT_Interphases_Pro:Bold'] leading-[1.2] min-w-0 text-[#171717] text-[24px] tabular-nums truncate">
+              {status === "error" ? "—" : count.toLocaleString("en-US")}
+            </p>
+          )}
+        </div>
+
+        {status === "loading" ? (
+          <>
+            <div className="flex flex-col gap-[8px] h-[40px] py-[4px] w-full">
+              <div className="bg-[#f5f5f5] h-[12px] rounded-[4px] w-full animate-pulse" />
+              <div className="bg-[#f5f5f5] h-[12px] rounded-[4px] w-[120px] max-w-full animate-pulse" />
+            </div>
+            <div className="bg-[#f5f5f5] h-[20px] rounded-[4px] shrink-0 w-[80px] animate-pulse" />
+          </>
+        ) : (
+          <>
+            <p role={isError ? "alert" : undefined} className="[word-break:break-word] font-['TT_Interphases_Pro:Regular'] min-h-[40px] leading-[20px] text-[#525252] text-[14px] w-full">
+              {isError ? "Couldn't load this data. Please try again." : count === 0 ? zeroDescription : description}
+            </p>
+            <button
+              type="button"
+              onClick={isError ? onRetry : undefined}
+              className={`th-press flex gap-[6px] items-center justify-center rounded-[4px] outline-none ${focusRing}`}
+            >
+              {isError && <img alt="" className="block shrink-0 size-[20px]" src={imgRefresh} />}
+              <span className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#ff6b00] text-[14px] underline decoration-from-font [text-underline-position:from-font] [text-decoration-skip-ink:none] whitespace-nowrap">
+                {isError ? "Retry" : action}
+              </span>
+              {!isError && <img alt="" className="block shrink-0 size-[20px]" src={imgArrowRight} />}
+            </button>
+          </>
+        )}
+      </div>
+    </WidgetCard>
   );
 }
 
