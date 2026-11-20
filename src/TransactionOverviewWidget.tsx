@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { currentDataset } from "./devData";
+import { useRole } from "./role";
 import { WidgetCard } from "./WidgetShell";
 
 const a = (file: string) => `/assets/${file}`;
@@ -12,9 +13,10 @@ const imgChevronRightHover = a("transaction-overview/chevronRightHover.svg");
 
 // ---------- Demo data ----------
 
-// Maker view: tasks waiting on the maker, split by product (Figma 2425:16267 · Task list).
+// Maker: tasks waiting on the maker, split by product (Figma 2425:16267 · Task list).
+// Approver & Releaser: one count of tasks to approve or release (Figma 2425:18543).
 type Task = { product: string; count: number };
-type Counts = { tasks: Task[]; progress: number };
+type Counts = { tasks: Task[]; approvals: number; progress: number };
 
 const tasksOf = (outward: number, inward: number, exportLc: number): Task[] => [
   { product: "Outward Guarantee", count: outward },
@@ -24,10 +26,10 @@ const tasksOf = (outward: number, inward: number, exportLc: number): Task[] => [
 
 const countData = (): Counts => {
   const dataset = currentDataset();
-  if (dataset === "worst") return { tasks: tasksOf(1096, 84, 24), progress: 1204 };
-  if (dataset === "empty") return { tasks: tasksOf(0, 0, 0), progress: 0 };
-  if (dataset === "one") return { tasks: tasksOf(1, 0, 0), progress: 1 };
-  return { tasks: tasksOf(10, 8, 4), progress: 6 };
+  if (dataset === "worst") return { tasks: tasksOf(1096, 84, 24), approvals: 1204, progress: 1204 };
+  if (dataset === "empty") return { tasks: tasksOf(0, 0, 0), approvals: 0, progress: 0 };
+  if (dataset === "one") return { tasks: tasksOf(1, 0, 0), approvals: 1, progress: 1 };
+  return { tasks: tasksOf(10, 8, 4), approvals: 4, progress: 6 };
 };
 
 type Status = "loading" | "ready" | "error";
@@ -143,11 +145,32 @@ function TaskList({ tasks }: { tasks: Task[] }) {
   );
 }
 
+// Description and link under the count, shared by Approver & Releaser's Action needed and In progress.
+function LinkBody({ text, action, name }: { text: string; action: string; name: string }) {
+  return (
+    <>
+      <p className={bodyText}>{text}</p>
+      <button type="button" className={`th-press flex gap-[6px] items-center justify-center rounded-[4px] outline-none ${focusRing}`} data-name={`Shortcut · ${name}`}>
+        <span className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#ff6b00] text-[14px] underline decoration-from-font [text-underline-position:from-font] [text-decoration-skip-ink:none] whitespace-nowrap">
+          {action}
+        </span>
+        <img alt="" className="block shrink-0 size-[20px]" src={imgArrowRight} />
+      </button>
+    </>
+  );
+}
+
 const lineSkeleton = (
   <div className="flex flex-col gap-[8px] h-[40px] py-[4px] w-full">
     <div className="bg-[#f5f5f5] h-[12px] rounded-[4px] w-full animate-pulse" />
     <div className="bg-[#f5f5f5] h-[12px] rounded-[4px] w-[120px] max-w-full animate-pulse" />
   </div>
+);
+const linkSkeleton = (
+  <>
+    {lineSkeleton}
+    <div className="bg-[#f5f5f5] h-[20px] rounded-[4px] shrink-0 w-[80px] animate-pulse" />
+  </>
 );
 
 // ---------- Widget ----------
@@ -156,7 +179,9 @@ export default function TransactionOverviewWidget({ className = "" }: { classNam
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
   const [counts] = useState(countData);
-  const actionTotal = counts.tasks.reduce((sum, t) => sum + t.count, 0);
+  const role = useRole();
+  const isMaker = role === "maker";
+  const actionTotal = isMaker ? counts.tasks.reduce((sum, t) => sum + t.count, 0) : counts.approvals;
 
   // Simulated fetch; both cards share one request, so Retry on either reloads both.
   useEffect(() => {
@@ -181,17 +206,25 @@ export default function TransactionOverviewWidget({ className = "" }: { classNam
         status={status}
         onRetry={retry}
         skeleton={
-          <div className="flex flex-col w-full">
-            {counts.tasks.map((t) => (
-              <div key={t.product} className="flex gap-[8px] h-[24px] items-center py-[2px] w-full">
-                <div className="bg-[#f5f5f5] flex-1 h-[12px] max-w-[160px] rounded-[4px] animate-pulse" />
-                <div className="bg-[#f5f5f5] h-[12px] ml-auto rounded-[4px] shrink-0 w-[28px] animate-pulse" />
-              </div>
-            ))}
-          </div>
+          isMaker ? (
+            <div className="flex flex-col w-full">
+              {counts.tasks.map((t) => (
+                <div key={t.product} className="flex gap-[8px] h-[24px] items-center py-[2px] w-full">
+                  <div className="bg-[#f5f5f5] flex-1 h-[12px] max-w-[160px] rounded-[4px] animate-pulse" />
+                  <div className="bg-[#f5f5f5] h-[12px] ml-auto rounded-[4px] shrink-0 w-[28px] animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            linkSkeleton
+          )
         }
       >
-        <TaskList tasks={counts.tasks} />
+        {isMaker ? (
+          <TaskList tasks={counts.tasks} />
+        ) : (
+          <LinkBody text={actionTotal === 0 ? "You’re all caught up." : "Tasks that require your attention."} action="View Tasks" name="Pending Task" />
+        )}
       </Card>
       <Card
         name="In progress"
@@ -202,20 +235,13 @@ export default function TransactionOverviewWidget({ className = "" }: { classNam
         count={counts.progress}
         status={status}
         onRetry={retry}
-        skeleton={
-          <>
-            {lineSkeleton}
-            <div className="bg-[#f5f5f5] h-[20px] rounded-[4px] shrink-0 w-[80px] animate-pulse" />
-          </>
-        }
+        skeleton={linkSkeleton}
       >
-        <p className={bodyText}>{counts.progress === 0 ? "No trade activities at the moment." : "Track your ongoing trade activities."}</p>
-        <button type="button" className={`th-press flex gap-[6px] items-center justify-center rounded-[4px] outline-none ${focusRing}`}>
-          <span className="font-['TT_Interphases_Pro:DemiBold'] leading-[20px] text-[#ff6b00] text-[14px] underline decoration-from-font [text-underline-position:from-font] [text-decoration-skip-ink:none] whitespace-nowrap">
-            Track Activities
-          </span>
-          <img alt="" className="block shrink-0 size-[20px]" src={imgArrowRight} />
-        </button>
+        <LinkBody
+          text={counts.progress === 0 ? "No trade activities at the moment." : "Track your ongoing trade activities."}
+          action="Track Activities"
+          name="Task Monitoring"
+        />
       </Card>
     </section>
   );

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { currentDataset } from "./devData";
 import { WidgetCard, WidgetFooter, useRefresh } from "./WidgetShell";
-import { MASK, useAmountsHidden } from "./amountVisibility";
 import { daysFromToday, shortDate } from "./demoClock";
 
 const a = (file: string) => `/assets/${file}`;
@@ -28,12 +27,7 @@ const baseFacilities: Facility[] = [
   { name: "Guarantee", total: 750_000_000, outstanding: 225_000_000, expiry: shortDate(daysFromToday(13)) },
 ];
 
-const formatMoney = (n: number) => `${CURRENCY} ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-// Hide Amount masks every nominal; percentages and expiry dates stay.
-const useMoney = () => {
-  const hidden = useAmountsHidden();
-  return (n: number) => (hidden ? `${CURRENCY} ${MASK}` : formatMoney(n));
-};
+const money = (n: number) => `${CURRENCY} ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usedPct = (f: Facility) => (f.total > 0 ? Math.min(100, Math.round((f.outstanding / f.total) * 100)) : 0);
 
 // Usage summary rows: 58px tall, 20px apart. The list shows three and a peek of the fourth, then scrolls.
@@ -202,7 +196,6 @@ function UsageHeader({ loading }: { loading: boolean }) {
 
 // Native overlay scrollbars hide until scrolled, so the thumb is drawn here and kept visible (as in the calendar list).
 function UsageList({ facilities }: { facilities: Facility[] }) {
-  const money = useMoney();
   const ref = useRef<HTMLUListElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
 
@@ -269,7 +262,6 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
   const [status, setStatus] = useState<Status>("loading");
   const [reloadKey, setReloadKey] = useState(0);
   const { refreshing, refresh, updatedAt } = useRefresh();
-  const money = useMoney();
 
   // Simulated fetch.
   useEffect(() => {
@@ -290,7 +282,7 @@ export default function LimitFacilityWidget({ className = "" }: { className?: st
 
   return (
     <WidgetCard
-      title="Facility Limit"
+      title="Trade and Guarantee Limit"
       info="Shows the available and used limit of each facility, based on your latest facility data at BNI."
       className={className}
       dataName="Widget / Limit Facility"

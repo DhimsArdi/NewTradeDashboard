@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { currentDataset } from "./devData";
 import { WidgetCard, WidgetFooter, useRefresh } from "./WidgetShell";
-import { maskAmount, useAmountsHidden } from "./amountVisibility";
 import { TODAY, daysFromToday } from "./demoClock";
 
 const a = (file: string) => `/assets/${file}`;
@@ -130,7 +129,6 @@ function Day({ date, state, dots, label, onSelect }: { date: Date; state: DaySta
 function ExpiryItem({ item }: { item: Expiry }) {
   const day = String(item.date.getDate()).padStart(2, "0");
   const month = item.date.toLocaleString("en-US", { month: "short" }).toUpperCase();
-  const hidden = useAmountsHidden();
   return (
     <li className="border-b border-[#f5f5f5] flex gap-[16px] min-h-[74px] items-center pl-[8px] pr-[12px] py-[13.5px] w-full">
       <div className="bg-[#f9f9f9] flex flex-col items-center justify-center rounded-[8px] shrink-0 size-[40px] font-['TT_Interphases_Pro:Medium'] leading-[18px] text-[#171717] text-[12px] text-center">
@@ -152,7 +150,7 @@ function ExpiryItem({ item }: { item: Expiry }) {
             <span title={item.counterparty} className="min-w-0 max-w-full truncate">{item.counterparty}</span>
             <span className="flex gap-[8px] items-center tabular-nums">
               <img alt="" className="block size-[4px] shrink-0" src={imgSeparator} />
-              {hidden ? maskAmount(item.amount) : item.amount}
+              {item.amount}
             </span>
           </div>
         </div>

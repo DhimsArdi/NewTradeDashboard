@@ -1,4 +1,5 @@
 import { useState, useSyncExternalStore } from "react";
+import { roleLabels, roles, setRole, useRole } from "./role";
 
 // Dev-only switch between demo data and stress-test fixtures (?data=worst|empty|one).
 // Production builds always read "demo" and never render the toggle.
@@ -40,42 +41,58 @@ const subscribe = (cb: () => void) => {
 
 export const useDataset = () => useSyncExternalStore(subscribe, currentDataset, () => "demo" as Dataset);
 
+const pill = "flex gap-[2px] p-[3px] rounded-full bg-[#e5e5e5] shadow-[0_2px_8px_rgba(0,0,0,0.12)]";
+const segment = (on: boolean) =>
+  `px-[12px] py-[5px] rounded-full whitespace-nowrap ${on ? "bg-white text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.1)]" : "text-[#525252]"}`;
+
+// Dev-only switch for the viewer's role; outside dev, ?role=maker still works.
+function RoleToggle() {
+  const active = useRole();
+  return (
+    <div role="radiogroup" aria-label="Role" className={pill}>
+      {roles.map((r) => (
+        <button key={r} type="button" role="radio" aria-checked={active === r} onClick={() => setRole(r)} className={segment(active === r)}>
+          {roleLabels[r]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function DevDataToggle() {
   const active = useDataset();
   const [hint, setHint] = useState<Dataset | null>(null);
   if (!import.meta.env.DEV) return null;
   return (
-    <div
-      role="radiogroup"
-      aria-label="Fixture data"
-      onMouseLeave={() => setHint(null)}
-      className="fixed bottom-[16px] left-1/2 -translate-x-1/2 z-50 flex gap-[2px] p-[3px] rounded-full bg-[#e5e5e5] shadow-[0_2px_8px_rgba(0,0,0,0.12)] font-[system-ui,sans-serif] text-[12px]"
-    >
-      {hint && (
-        <p
-          id="dev-data-hint"
-          role="tooltip"
-          className="th-tooltip origin-bottom absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[280px] max-w-[calc(100vw-32px)] px-[10px] py-[8px] rounded-[8px] bg-[#171717] text-white leading-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.16)] pointer-events-none"
-        >
-          {hints[hint]}
-        </p>
-      )}
-      {datasets.map((d) => (
-        <button
-          key={d}
-          type="button"
-          role="radio"
-          aria-checked={active === d}
-          aria-describedby={hint === d ? "dev-data-hint" : undefined}
-          onMouseEnter={() => setHint(d)}
-          onFocus={() => setHint(d)}
-          onBlur={() => setHint(null)}
-          onClick={() => setDataset(d)}
-          className={`px-[12px] py-[5px] rounded-full whitespace-nowrap ${active === d ? "bg-white text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.1)]" : "text-[#525252]"}`}
-        >
-          {labels[d]}
-        </button>
-      ))}
+    <div className="fixed bottom-[16px] left-1/2 -translate-x-1/2 z-50 flex gap-[8px] font-[system-ui,sans-serif] text-[12px]">
+      <RoleToggle />
+      <div role="radiogroup" aria-label="Fixture data" onMouseLeave={() => setHint(null)} className={`relative ${pill}`}>
+        {hint && (
+          <p
+            id="dev-data-hint"
+            role="tooltip"
+            className="th-tooltip origin-bottom absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[280px] max-w-[calc(100vw-32px)] px-[10px] py-[8px] rounded-[8px] bg-[#171717] text-white leading-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.16)] pointer-events-none"
+          >
+            {hints[hint]}
+          </p>
+        )}
+        {datasets.map((d) => (
+          <button
+            key={d}
+            type="button"
+            role="radio"
+            aria-checked={active === d}
+            aria-describedby={hint === d ? "dev-data-hint" : undefined}
+            onMouseEnter={() => setHint(d)}
+            onFocus={() => setHint(d)}
+            onBlur={() => setHint(null)}
+            onClick={() => setDataset(d)}
+            className={segment(active === d)}
+          >
+            {labels[d]}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

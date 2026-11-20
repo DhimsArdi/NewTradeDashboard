@@ -8,7 +8,6 @@ import TransactionOverviewWidget from "./TransactionOverviewWidget";
 import QuickAccessWidget from "./QuickAccessWidget";
 import { DevDataToggle, useDataset } from "./devData";
 import PageHeader from "./PageHeader";
-import { AmountsHiddenProvider } from "./amountVisibility";
 
 const assetPathPrefix = "/assets";
 const imgLogo = `${assetPathPrefix}/f2ae2.png`;
@@ -34,32 +33,12 @@ const imgBank = `${assetPathPrefix}/cf740.svg`;
 const imgArrowCircleBrokenUpRight = `${assetPathPrefix}/7c7ea.svg`;
 const imgContainer1 = `${assetPathPrefix}/62582.svg`;
 
-// Hide Amount is a per-viewer preference, remembered across visits.
-const HIDE_AMOUNT_KEY = "trade-dashboard:hide-amount";
-const readAmountsHidden = () => {
-  try {
-    return localStorage.getItem(HIDE_AMOUNT_KEY) === "1";
-  } catch {
-    return false;
-  }
-};
-
 const NAV_EXPANDED = 336;
 const NAV_COLLAPSED = 88;
 
 export default function TradeDashboardMaster() {
   const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(false);
   const [notice, setNotice] = useState("");
-  const [amountsHidden, setAmountsHidden] = useState(readAmountsHidden);
-  const toggleAmounts = () => {
-    const next = !amountsHidden;
-    setAmountsHidden(next);
-    try {
-      localStorage.setItem(HIDE_AMOUNT_KEY, next ? "1" : "0");
-    } catch {
-      // Storage can be blocked; the toggle still works for this visit.
-    }
-  };
   // Dev-only fixture switch; remounting the widgets reloads them with the chosen dataset.
   const dataset = useDataset();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -103,25 +82,23 @@ export default function TradeDashboardMaster() {
         data-node-id="2:19887"
       >
         <div className="content-stretch flex flex-col items-start min-w-[400px] pointer-events-auto pr-[8px] py-[8px] rounded-[16px] w-full" data-name="container_wrapper">
-          <div className="bg-[#f5f5f5] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start min-h-[calc(100svh-16px)] overflow-clip pb-[32px] pt-[40px] relative rounded-[16px] shrink-0 w-full" data-node-id="2:19888" data-name="Main">
+          <div className="bg-[#f5f5f5] border border-[#e5e5e5] border-solid content-stretch flex flex-col items-start min-h-[calc(100svh-16px)] overflow-clip pb-[32px] pt-[32px] relative rounded-[16px] shrink-0 w-full" data-node-id="2:19888" data-name="Main">
             <div className="@container flex flex-col gap-[32px] max-w-[1280px] relative self-center shrink-0 w-full" data-node-id="42:64534" data-name="Vertical Scroll">
               <div className="flex px-[32px] w-full">
-                <PageHeader amountsHidden={amountsHidden} onToggleAmounts={toggleAmounts} onManageWidget={() => setNotice("Manage Widget opened")} />
+                <PageHeader />
               </div>
-              <AmountsHiddenProvider value={amountsHidden}>
-                <div className="@min-[880px]:flex-row content-stretch flex flex-col gap-[24px] items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19891" data-name="Container <>">
-                  <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-start min-w-px relative w-full" data-node-id="2:19892" data-name="Left-Column">
-                    <LimitFacilityWidget key={`limit-${dataset}`} className="shrink-0 w-full" />
-                    <TransactionHistoryWidget key={`history-${dataset}`} className="shrink-0 w-full" />
-                    <ReportOverviewWidget key={`report-${dataset}`} className="shrink-0 w-full" />
-                  </div>
-                  <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-center min-w-px relative w-full" data-node-id="2:20089" data-name="Right-Column">
-                    <TransactionOverviewWidget key={`overview-${dataset}`} className="shrink-0 w-full" />
-                    <CalendarWidget key={`calendar-${dataset}`} className="shrink-0 w-full" />
-                    <QuickAccessWidget className="shrink-0 w-full" />
-                  </div>
+              <div className="@min-[880px]:flex-row content-stretch flex flex-col gap-[24px] items-start px-[32px] relative shrink-0 w-full" data-node-id="2:19891" data-name="Container <>">
+                <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-start min-w-px relative w-full" data-node-id="2:19892" data-name="Left-Column">
+                  <LimitFacilityWidget key={`limit-${dataset}`} className="shrink-0 w-full" />
+                  <TransactionHistoryWidget key={`history-${dataset}`} className="shrink-0 w-full" />
+                  <ReportOverviewWidget key={`report-${dataset}`} className="shrink-0 w-full" />
                 </div>
-              </AmountsHiddenProvider>
+                <div className="@min-[880px]:flex-[1_0_0] content-stretch flex flex-col gap-[24px] items-center min-w-px relative w-full" data-node-id="2:20089" data-name="Right-Column">
+                  <TransactionOverviewWidget key={`overview-${dataset}`} className="shrink-0 w-full" />
+                  <CalendarWidget key={`calendar-${dataset}`} className="shrink-0 w-full" />
+                  <QuickAccessWidget className="shrink-0 w-full" />
+                </div>
+              </div>
             </div>
           </div>
         </div>

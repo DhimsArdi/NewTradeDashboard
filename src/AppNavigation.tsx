@@ -1,23 +1,29 @@
 import { useMemo, useState } from "react";
+import { useRole } from "./role";
 
 const a = (file: string) => `/assets/${file}`;
 
+// Figma 2425:18530 · App Navigation 3.0 (Home - Trade · POV per role)
 type Channel = { label: string; icon: string; comingSoon?: boolean };
 type MenuItem = { label: string; icon: string; badge?: string };
 type MenuGroup = { title?: string; items: MenuItem[] };
 
+const TRADE = "Trade & Guarantee";
+// The dashboard is the Overview page of Trade & Guarantee.
+const HOME = "Overview";
+
 const channels: Channel[] = [
-  { label: "Trade Services", icon: a("99317.svg") },
-  { label: "Global Nostro", icon: a("19f13.svg") },
-  { label: "Cash Management", icon: a("2d9f2.svg"), comingSoon: true },
+  { label: "Cash Management", icon: a("2d9f2.svg") },
+  { label: TRADE, icon: a("99317.svg") },
   { label: "Supply Chain", icon: a("f8560.svg"), comingSoon: true },
   { label: "Forex", icon: a("5b274.svg"), comingSoon: true },
   { label: "Receivables", icon: a("5d4d7.svg"), comingSoon: true },
 ];
 
+const pendingTask: MenuItem = { label: "Pending Task", icon: a("13e1b.svg"), badge: "10" };
 const generalMenu: MenuItem[] = [
-  { label: "Overview", icon: a("bd0bb.svg") },
-  { label: "Pending Task", icon: a("13e1b.svg"), badge: "10" },
+  { label: HOME, icon: a("bd0bb.svg") },
+  pendingTask,
   { label: "Task Monitoring", icon: a("c0068.svg") },
   { label: "Report Overview", icon: a("056d4.svg") },
   { label: "DHE SDA", icon: a("ca8cc.svg") },
@@ -25,15 +31,14 @@ const generalMenu: MenuItem[] = [
 ];
 
 const channelGroups: MenuGroup[] = [
-  { items: [{ label: "Trade Dashboard", icon: a("1e7c9.svg") }] },
   {
-    title: "BANK GUARANTEE",
+    title: "GUARANTEE",
     items: [
       { label: "Outward Guarantee", icon: a("625b8.svg") },
       { label: "Inward Guarantee", icon: a("cf740.svg") },
     ],
   },
-  { title: "TRADE", items: [{ label: "Export LC", icon: a("7c7ea.svg") }] },
+  { title: "TRADE", items: [{ label: "Export LC/Inward SKBDN", icon: a("7c7ea.svg") }] },
 ];
 
 type Props = {
@@ -73,13 +78,14 @@ function NavItem({ item, active, onSelect }: { item: MenuItem; active: boolean; 
 }
 
 export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) {
-  const [activeChannel, setActiveChannel] = useState("Trade Services");
-  const [activeItem, setActiveItem] = useState("Trade Dashboard");
+  const [activeItem, setActiveItem] = useState(HOME);
   const [query, setQuery] = useState("");
+  // Makers don't approve, so they have no Pending Task (Figma 2425:16254).
+  const isMaker = useRole() === "maker";
 
   const q = query.trim().toLowerCase();
   const match = (item: MenuItem) => !q || item.label.toLowerCase().includes(q);
-  const filteredGeneral = generalMenu.filter(match);
+  const filteredGeneral = generalMenu.filter((item) => !(isMaker && item === pendingTask) && match(item));
   const filteredGroups = useMemo(
     () => channelGroups.map((g) => ({ ...g, items: g.items.filter(match) })).filter((g) => g.items.length),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,7 +95,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
 
   const select = (label: string) => {
     setActiveItem(label);
-    if (label !== "Trade Dashboard") onNotify(`${label} opened`);
+    if (label !== HOME) onNotify(`${label} opened`);
   };
 
   const selectChannel = (channel: Channel) => {
@@ -97,7 +103,10 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
       onNotify(`${channel.label} is coming soon`);
       return;
     }
-    setActiveChannel(channel.label);
+    if (channel.label !== TRADE) {
+      onNotify(`${channel.label} opened`);
+      return;
+    }
     if (collapsed) onToggle();
   };
 
@@ -117,7 +126,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
           aria-expanded={!collapsed}
           className="flex h-[36px] min-w-[36px] items-center justify-center rounded-[6px] hover:bg-[#f5f5f5] outline-none focus-visible:shadow-[0_0_0_2px_#077879]"
         >
-          <img alt="" className={`block size-[24px] transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} src={a("5c708.svg")} />
+          <img alt="" className={`block size-[20px] transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} src={a("sidebarLeft.svg")} />
         </button>
       </div>
 
@@ -126,7 +135,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
         <div className="flex h-full w-[88px] shrink-0 flex-col pt-[16px]">
           <div className="flex flex-1 min-h-0 flex-col items-center gap-[8px] overflow-y-auto overscroll-contain pb-[16px] pt-[3px]">
             {channels.map((channel) => {
-              const active = channel.label === activeChannel;
+              const active = channel.label === TRADE;
               return (
                 <button
                   key={channel.label}
@@ -199,7 +208,7 @@ export default function AppNavigation({ collapsed, onToggle, onNotify }: Props) 
 
           {filteredGroups.length > 0 && (
             <div className="flex flex-col">
-              <p className="pt-[16px] font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">{activeChannel}</p>
+              <p className="pt-[16px] font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">{TRADE}</p>
               {filteredGroups.map((group, i) => (
                 <div key={group.title ?? i} className={group.title ? "" : "pt-[16px]"}>
                   {group.title && (

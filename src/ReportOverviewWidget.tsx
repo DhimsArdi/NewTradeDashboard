@@ -100,7 +100,7 @@ const reportName = (r: DownloadRequest) =>
 
 const defaultReports: ReportSummary[] = [
   { id: "transaction-history", title: "Transaction History", description: "Bank Guarantee and LC transactions.", hasData: true },
-  { id: "limit-facility", title: "Facility Limit", description: "Limit and usage of your facilities.", hasData: true },
+  { id: "limit-facility", title: "Trade and Guarantee Limit", description: "Limit and usage of your facilities.", hasData: true },
 ];
 
 // Stress-test fixture for the dev data toggle: descriptions as long as the API may send.
@@ -111,7 +111,7 @@ const worstReports: ReportSummary[] = [
     description: "Monthly completed transactions by event and product, including amendments, claims and released guarantees across all channels.",
     hasData: true,
   },
-  { id: "limit-facility", title: "Facility Limit", description: "Limit, outstanding and availability per facility, including syndicated and over-limit facilities.", hasData: false },
+  { id: "limit-facility", title: "Trade and Guarantee Limit", description: "Limit, outstanding and availability per facility, including syndicated and over-limit facilities.", hasData: false },
 ];
 
 type Status = "loading" | "ready" | "error";

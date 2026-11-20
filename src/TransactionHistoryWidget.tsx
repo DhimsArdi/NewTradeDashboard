@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { currentDataset } from "./devData";
 import { WidgetCard, WidgetFooter, useRefresh } from "./WidgetShell";
-import { MASK, useAmountsHidden } from "./amountVisibility";
 import { TODAY } from "./demoClock";
 
 const a = (file: string) => `/assets/transaction-history/${file}`;
@@ -508,8 +507,7 @@ export default function TransactionHistoryWidget({ className = "" }: { className
   }, [hasChart]);
   const ticks = Array.from({ length: AXIS_STEPS + 1 }, (_, i) => (top / AXIS_STEPS) * (AXIS_STEPS - i));
   // Hide Amount masks volumes (tooltip values and the amount axis); item counts aren't amounts and stay.
-  const amountsHidden = useAmountsHidden() && isVolume;
-  const fmtAmount = (v: number) => (amountsHidden ? `${currency} ${MASK}` : money(v, currency));
+  const fmtAmount = (v: number) => money(v, currency);
   const fmt = (v: number) => (isVolume ? fmtAmount(v) : v.toLocaleString("en-US"));
   const fmtTotal = (v: number) => (v === 0 ? "No transactions" : isVolume ? fmtAmount(v) : `${v.toLocaleString("en-US")} item${v === 1 ? "" : "s"}`);
 
@@ -612,7 +610,7 @@ export default function TransactionHistoryWidget({ className = "" }: { className
                 return (
                   <div key={i} className="absolute left-0 right-0 flex items-center gap-[8px] -translate-y-1/2" style={{ top: y }}>
                     <p className={`shrink-0 text-right font-['TT_Interphases_Pro:Regular'] leading-[18px] text-[#525252] text-[12px] ${loading ? "invisible" : ""}`} style={{ width: Y_AXIS_WIDTH }}>
-                      {amountsHidden ? "•••" : axisLabel(t, top)}
+                      {axisLabel(t, top)}
                     </p>
                     <div className="flex-1 h-px bg-[#e5e5e5]" />
                   </div>
