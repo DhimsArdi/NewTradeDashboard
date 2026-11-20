@@ -71,7 +71,7 @@ const COLOR_AMEND = "#3b82f6";
 const sameDay = (x: Date, y: Date) => x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
 const monthLabel = (d: Date) => d.toLocaleString("en-US", { month: "long", year: "numeric" });
 const dayLabel = (d: Date) => `${d.getDate()} ${d.toLocaleString("en-US", { month: "short" })} ${d.getFullYear()}`;
-const plural = (n: number) => `${n} ${n === 1 ? "expiry" : "expiries"}`;
+const plural = (n: number) => `${n} ${n === 1 ? "event" : "events"}`;
 
 // Always 6 weeks, Monday first.
 const monthGrid = (month: Date) => {
@@ -290,7 +290,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
       ).filter(([show]) => show)
     : [];
 
-  const listTitle = selected ? `Expiries on ${dayLabel(selected)}` : isCurrentMonth ? "Upcoming expiry" : `Expiries in ${monthLabel(month)}`;
+  const listTitle = selected ? `Events on ${dayLabel(selected)}` : isCurrentMonth ? "Upcoming events" : `Events in ${monthLabel(month)}`;
   const showEmpty = status === "empty" || (ready && listItems.length === 0);
 
   return (
@@ -405,7 +405,7 @@ export default function CalendarWidget({ className = "" }: { className?: string 
             ) : showEmpty ? (
               <div className="cal-fade-in bg-[#fafafa] flex h-full flex-col gap-[8px] items-center justify-center p-[16px] rounded-[12px] text-center">
                 <img alt="" className="block h-[80.8px] w-[130.8px]" src={imgEmpty} />
-                <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">No expiries in this month</p>
+                <p className="font-['TT_Interphases_Pro:DemiBold'] leading-[24px] text-[#171717] text-[16px]">No events in this month</p>
                 <p className="font-['TT_Interphases_Pro:Regular'] leading-[20px] text-[#525252] text-[14px] max-w-[340px]">
                   Expiry dates of your transactions and facility limits will appear here.
                 </p>

@@ -13,7 +13,7 @@ const hints: Record<Dataset, string> = {
   demo: "Data contoh yang wajar, seperti tampilan dashboard sehari-hari.",
   worst: "Data ekstrem tapi masih realistis: nominal triliunan, nama counterparty panjang, 60 expiry dalam sebulan, facility melebihi limit. Untuk cek tampilan tidak rusak.",
   empty: "Tanpa data sama sekali. Untuk cek tampilan kosong (empty state) di setiap widget.",
-  one: "Hanya satu data per widget. Untuk cek teks tunggal (mis. \"1 expiry\") dan tampilan saat datanya sedikit.",
+  one: "Hanya satu data per widget. Untuk cek teks tunggal (mis. \"1 event\") dan tampilan saat datanya sedikit.",
 };
 
 export const currentDataset = (): Dataset => {
